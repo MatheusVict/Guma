@@ -1,0 +1,26 @@
+@use '../variables/typography' as typography;
+
+// Helper Functions
+@function font($type, $key) {
+  @return map-get(map-get(typography.$fonts, $type), $key);
+}
+
+@function font-family($key) {
+  @return font('family', $key);
+}
+
+@function font-weight($key) {
+  @return font('weight', $key);
+}
+
+@function font-size($key) {
+  @return font('size', $key);
+}
+
+@function line-height($key) {
+  @return font('line-height', $key);
+}
+
+@function letter-spacing($key) {
+  @return font('letter-spacing', $key);
+}

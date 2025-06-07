@@ -1,0 +1,114 @@
+$colors: (
+  // Orange Shades
+  'orange': (
+    'light-1': #EDB664,
+    'light-2': #F88559,
+    'light-3': #F37443,
+    'light-4': #E9BD7C,
+    'primary': #FC682F,
+    'dark-1': #FA591B,
+    'dark-2': #EA5217,
+    'dark-3': #F64D0C,
+    'dark-4': #D9440B,
+    'dark-5': #C13E0C,
+    'dark-6': #A33105,
+    'gold': #F0B256
+  ),
+  
+  // Neutral/Gray Shades
+  'neutral': (
+    'white-off': #FDF8F3,
+    'cream': #FDF1E5,
+    'gray-lightest': #EBE5E0,
+    'gray-lighter': #DAD8D5,
+    'gray-light': #BFBFBF,
+    'gray-mauve': #C7B7B7,
+    'gray-medium': #ACA5A5,
+    'gray-medium-dark': #968E8E,
+    'gray-dark': #534E4E,
+    'gray-darkest': #2D2929
+  ),
+  
+  // Gold/Yellow Shades
+  'gold': (
+    'light-1': #EDAC4B,
+    'light-2': #E7A23C,
+    'light-3': #EA9E2F,
+    'light-4': #EE991C,
+    'primary': #F2950A,
+    'dark-1': #BE770F,
+    'dark-2': #965E0B
+  ),
+  
+  // Yellow Shades
+  'yellow': (
+    'light-1': #F0E93F,
+    'light-2': #FAF236,
+    'light-3': #E1D920,
+    'primary': #F4EB0F,
+    'variant-1': #E5DD17,
+    'variant-2': #EAE227,
+    'variant-3': #F6EE26,
+    'variant-4': #F3EA15,
+    'dark-1': #C7BE02,
+    'dark-2': #767105
+  ),
+  
+  // Green Shades
+  'green': (
+    'light-1': #7DF03F,
+    'light-2': #79F935,
+    'light-3': #6AFB1C,
+    'light-4': #5FFF09,
+    'medium-1': #68DF28,
+    'medium-2': #58D316,
+    'medium-3': #49BD0B,
+    'dark-1': #286805,
+    'dark-2': #378C09,
+    'dark-3': #47AB11
+  ),
+  
+  // Red Shades
+  'red': (
+    'light-1': #F03F42,
+    'light-2': #F12B2F,
+    'light-3': #EB2226,
+    'primary': #FE0D11,
+    'variant': #ED090D,
+    'dark-1': #D60408,
+    'dark-2': #CB0003,
+    'dark-3': #AF0003,
+    'dark-4': #A30104,
+    'dark-5': #820507
+  ),
+  
+  // Blue Shades
+  'blue': (
+    'light-1': #3F9BF0,
+    'light-2': #319AFC,
+    'light-3': #3092EE,
+    'light-4': #1B8FFC,
+    'primary': #0084FF,
+    'dark-1': #037FF2,
+    'dark-2': #0574DC,
+    'dark-3': #066DCD,
+    'dark-4': #0758A3,
+    'dark-5': #02386A
+  )
+);
+
+// Function to easily access colors
+@function color($color-name, $color-variant: null) {
+  // If variant is specified, return that specific color
+  @if $color-variant != null {
+    @return map-get(map-get($colors, $color-name), $color-variant);
+  }
+  
+  // If only color name is specified, try to return the primary variant
+  @if map-has-key(map-get($colors, $color-name), 'primary') {
+    @return map-get(map-get($colors, $color-name), 'primary');
+  }
+  
+  // Fallback to returning the entire color map
+  @return map-get($colors, $color-name);
+}

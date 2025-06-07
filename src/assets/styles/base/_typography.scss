@@ -1,0 +1,51 @@
+@use '../mixins/text-styles' as typography;
+
+p {
+  @include typography.body-default;
+}
+
+h1 {
+  @include typography.heading-1;
+}
+
+h2 {
+  @include typography.heading-2;
+}
+
+h3 {
+  @include typography.heading-3;
+}
+
+h4 {
+  @include typography.heading-4;
+}
+
+h5 {
+  @include typography.heading-5;
+}
+
+h6 {
+  @include typography.heading-6;
+}
+
+small {
+  @include typography.body-small;
+}
+
+button {
+  @include typography.button-text;
+}
+
+blockquote {
+  @include typography.accent-text;
+}
+
+.highlight {
+  @include typography.accent-text;
+}
+
+a {
+  @include typography.accent-text;
+}
+
+

@@ -1,0 +1,62 @@
+@use '../helpers/heading-styles' as headingStyles;
+
+// Mixins for common text styles
+@mixin text-style($size: 'base', $weight: 'regular', $line-height: 'normal', $family: 'primary') {
+  font-family: headingStyles.font-family($family);
+  font-size: headingStyles.font-size($size);
+  font-weight: headingStyles.font-weight($weight);
+  line-height: headingStyles.line-height($line-height);
+}
+
+// Heading styles
+@mixin heading-1 {
+  @include text-style('4xl', 'bold', 'tight', 'primary');
+}
+
+@mixin heading-2 {
+  @include text-style('3xl', 'bold', 'tight', 'primary');
+}
+
+@mixin heading-3 {
+  @include text-style('2xl', 'semi-bold', 'tight', 'primary');
+}
+
+@mixin heading-4 {
+  @include text-style('xl', 'semi-bold', 'tight', 'primary');
+}
+
+@mixin heading-5 {
+  @include text-style('lg', 'medium', 'tight', 'primary');
+}
+
+@mixin heading-6 {
+  @include text-style('md', 'medium', 'tight', 'primary');
+}
+
+
+// Body text styles
+@mixin body-large {
+  @include text-style('lg', 'regular', 'normal', 'primary');
+}
+
+@mixin body-default {
+  @include text-style('base', 'regular', 'normal', 'primary');
+}
+
+@mixin body-small {
+  @include text-style('sm', 'regular', 'normal', 'primary');
+}
+
+// Special text styles
+@mixin caption {
+  @include text-style('xs', 'regular', 'normal', 'primary');
+}
+
+@mixin button-text {
+  @include text-style('base', 'medium', 'normal', 'primary');
+  letter-spacing: headingStyles.letter-spacing('wide');
+}
+
+@mixin accent-text {
+  @include text-style('lg', 'regular', 'normal', 'secondary');
+}
