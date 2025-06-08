@@ -10,27 +10,27 @@
 
 // Heading styles
 @mixin heading-1 {
-  @include text-style('4xl', 'bold', 'tight', 'primary');
+  @include text-style('4xl', 'bold', 'tight', 'secondary');
 }
 
 @mixin heading-2 {
-  @include text-style('3xl', 'bold', 'tight', 'primary');
+  @include text-style('3xl', 'bold', 'tight', 'secondary');
 }
 
 @mixin heading-3 {
-  @include text-style('2xl', 'semi-bold', 'tight', 'primary');
+  @include text-style('2xl', 'semi-bold', 'tight', 'secondary');
 }
 
 @mixin heading-4 {
-  @include text-style('xl', 'semi-bold', 'tight', 'primary');
+  @include text-style('xl', 'semi-bold', 'tight', 'secondary');
 }
 
 @mixin heading-5 {
-  @include text-style('lg', 'medium', 'tight', 'primary');
+  @include text-style('lg', 'medium', 'tight', 'secondary');
 }
 
 @mixin heading-6 {
-  @include text-style('md', 'medium', 'tight', 'primary');
+  @include text-style('md', 'medium', 'tight', 'secondary');
 }
 
 
@@ -58,5 +58,5 @@
 }
 
 @mixin accent-text {
-  @include text-style('lg', 'regular', 'normal', 'secondary');
+  @include text-style('lg', 'regular', 'normal', 'primary');
 }
