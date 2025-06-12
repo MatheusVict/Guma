@@ -101,13 +101,24 @@ jobs:
         with:
           category: "/language:${{matrix.language}}"
   dependency-review:
-    needs: build
+    needs: build  # Ensures npm install happened first
     runs-on: ubuntu-latest
     steps:
-      - name: 'Checkout repository'
-        uses: actions/checkout@v4
-      - name: 'Dependency Review'
-        uses: actions/dependency-review-action@v4
-        # Commonly enabled options, see https://github.com/actions/dependency-review-action#configuration-options for all available options.
+      - uses: actions/checkout@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v4
         with:
+          node-version: 18
+
+      # Generate lockfile if missing (critical for security)
+      - name: Generate lockfile
+        run: npm ci --package-lock-only
+
+      # Review ALL dependencies
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          manifest-path: package.json
+          lockfile-path: package-lock.json
+          include: all-dependencies  # Actions + app
           comment-summary-in-pr: always
