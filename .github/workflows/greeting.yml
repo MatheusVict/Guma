@@ -13,7 +13,7 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           issue-message: "Hey thanks for the issue, we'll address this topic carefully. Any other question please contact the admins"
-          pr-message: "Thanks for contributing to Opaleiros project, pls feel free to help to grow this project, you can see more in [Opaleiros twitter](https://x.com/MrPunkSama)"
+          pr-message: "Thanks for contributing to Opaleiros project, please feel free to help to grow this project, you can see more in [Opaleiros twitter](https://x.com/MrPunkSama)"
   label:
     runs-on: ubuntu-latest
     permissions:
