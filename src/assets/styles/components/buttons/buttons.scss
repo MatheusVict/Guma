@@ -1,0 +1,35 @@
+@use "../../variables/colors" as colors;
+@use "../../variables/base" as base;
+@use "../../variables/typography" as typography;
+
+.button-primary {
+  display: inline-block;
+  padding: base.$padding-md base.$padding-xl;
+  border: 2px solid colors.color("orange", "primary");
+  border-radius: base.$border-radius-lg;
+  background: transparent;
+  color: colors.color("neutral", "white");
+  font-family: typography.$font-secondary;
+  font-weight: map-get(typography.$font-weights, 'semi-bold');
+  font-size: map-get(typography.$font-sizes, 'base');
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: all 0.3s ease-in-out;
+
+  &:hover {
+    background-color: rgba(colors.color("orange", "primary"), 0.1);
+    box-shadow: 0 0 8px colors.color("orange", "primary");
+    transform: translateY(-2px);
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(colors.color("orange", "primary"), 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+}

@@ -21,5 +21,5 @@ import ButtonPrimary from "../components/buttons/ButtonPrimary.vue";
 </template>
 
 <style scoped lang="scss">
-
+@import "../assets/styles/components/hero/hero";
 </style>

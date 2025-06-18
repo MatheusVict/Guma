@@ -1,0 +1,126 @@
+@use "../../variables/colors" as colors;
+@use "../../variables/base" as base;
+@use "../../variables/typography" as typography;
+@use "../../variables/breakpoints" as breakpoints;
+@use "../../mixins/flex" as flex;
+
+.hero {
+  @include flex.flex-row(center, center, nowrap, base.$size-xxxl);
+  min-height: 100vh;
+  padding: base.$padding-xxl base.$padding-lg;
+  position: relative;
+  z-index: 1;
+  
+  @media (max-width: breakpoints.$breakpoint-lg) {
+    @include flex.flex-column(center, center, nowrap, base.$size-xl);
+    padding: base.$padding-xl base.$padding-md;
+    text-align: center;
+  }
+}
+
+.hero-image {
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 2;
+  margin-right: base.$margin-xxl;
+  
+  img {
+    max-width: 400px;
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 10px 30px rgba(colors.color("orange", "primary"), 0.3));
+    animation: imageFloat 6s ease-in-out infinite;
+  }
+  
+  @media (max-width: breakpoints.$breakpoint-lg) {
+    margin-right: 0;
+    margin-bottom: base.$margin-xl;
+    order: -1;
+    
+    img {
+      max-width: 300px;
+    }
+  }
+  
+  @media (max-width: breakpoints.$breakpoint-md) {
+    img {
+      max-width: 250px;
+    }
+  }
+}
+
+.hero-content {
+  flex: 1;
+  max-width: 600px;
+  position: relative;
+  z-index: 2;
+  @include flex.flex-column(flex-start, flex-start, nowrap, base.$size-lg);
+  
+  @media (max-width: breakpoints.$breakpoint-lg) {
+    @include flex.flex-column(center, center, nowrap, base.$size-lg);
+    max-width: 100%;
+    text-align: center;
+  }
+  
+  h1 {
+    font-family: typography.$font-secondary;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: map-get(typography.$font-weights, 'regular');
+    line-height: map-get(typography.$line-heights, 'tight');
+    margin: 0 0 base.$margin-lg 0;
+    background: linear-gradient(135deg, colors.color("orange", "primary"), colors.color("gold", "primary"));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 80px;
+      height: 3px;
+      background: linear-gradient(90deg, colors.color("orange", "primary"), colors.color("gold", "primary"));
+      border-radius: 2px;
+      animation: underlineGlow 2s ease-in-out infinite alternate;
+      
+      @media (max-width: breakpoints.$breakpoint-lg) {
+        left: 50%;
+        transform: translateX(-50%);
+      }
+    }
+  }
+  
+  p {
+    font-family: typography.$font-primary;
+    font-size: map-get(typography.$font-sizes, 'lg');
+    font-weight: map-get(typography.$font-weights, 'regular');
+    line-height: map-get(typography.$line-heights, 'relaxed');
+    color: colors.color("neutral", "gray-lighter");
+    margin: 0 0 base.$margin-xl 0;
+    max-width: 500px;
+  }
+}
+
+// Component-specific animations
+@keyframes imageFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-10px) rotate(2deg);
+  }
+  66% {
+    transform: translateY(5px) rotate(-1deg);
+  }
+}
+
+@keyframes underlineGlow {
+  0% {
+    box-shadow: 0 0 5px rgba(colors.color("orange", "primary"), 0.5);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(colors.color("orange", "primary"), 0.8);
+  }
+}
