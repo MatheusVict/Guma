@@ -1,0 +1,137 @@
+@use "../../variables/colors" as colors;
+@use "../../variables/base" as base;
+@use "../../variables/typography" as typography;
+@use "../../variables/breakpoints" as breakpoints;
+@use "../../mixins/flex" as flex;
+
+.why-do-you-need {
+  @include flex.flex-column();
+  align-items: center;
+  justify-content: space-between;
+  padding-top: base.$padding-lg * 2;
+  margin-bottom: base.$margin-lg * 3;
+
+  header {
+    text-align: center;
+    margin-bottom: base.$margin-xl;
+    
+    h2 {
+      font-size: typography.$font-secondary;
+      font-weight: typography.$font-primary;
+      color: colors.color("neutral", "light");
+      margin-bottom: base.$margin-md;
+    }
+  }
+
+  span {
+    color: #F64D0C;
+  }
+
+  .boxes {
+    @include flex.flex-row(center, center, wrap, base.$size-lg);
+    max-width: 1200px;
+    width: 100%;
+    
+    @media (max-width: breakpoints.$breakpoint-lg) {
+      @include flex.flex-column(center, center, nowrap, base.$size-md);
+    }
+  }
+
+  .box {
+    @include flex.flex-column(flex-start, center, nowrap, base.$size-md);
+    border: 2px solid rgba(colors.color("orange", "primary"), 0.2);
+    border-radius: 16px;
+    padding: base.$padding-xl;
+    min-height: 280px;
+    flex: 1;
+    max-width: 350px;
+    min-width: 280px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    
+    &:hover {
+      transform: translateY(-8px);
+      border-color: rgba(colors.color("orange", "primary"), 0.5);
+      box-shadow: 0 12px 32px rgba(colors.color("orange", "primary"), 0.15);
+    }
+    
+    @media (max-width: breakpoints.$breakpoint-lg) {
+      max-width: 100%;
+      min-width: auto;
+      width: 100%;
+    }
+    
+    @media (max-width: breakpoints.$breakpoint-md) {
+      padding: base.$padding-lg;
+      min-height: 240px;
+    }
+
+    &__icon {
+      @include flex.flex-row(center, center);
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, 
+        rgba(colors.color("orange", "primary"), 0.2), 
+        rgba(colors.color("orange", "primary"), 0.1)
+      );
+      border-radius: 50%;
+      margin-bottom: base.$margin-lg;
+      transition: all 0.3s ease;
+      
+      img {
+        width: 75px;
+        height: 75px;
+        object-fit: contain;
+        filter: brightness(1.2);
+      }
+      
+      @media (max-width: breakpoints.$breakpoint-md) {
+        width: 60px;
+        height: 60px;
+        
+        img {
+          width: 30px;
+          height: 30px;
+        }
+      }
+    }
+
+    &__content {
+      text-align: center;
+      flex: 1;
+      @include flex.flex-column(flex-start, center, nowrap, base.$size-sm);
+
+      h3 {
+        font-size: typography.$font-secondary;
+        font-weight: typography.$font-primary;
+        color: colors.color("neutral", "light");
+        margin-bottom: base.$margin-md;
+        line-height: 1.3;
+        
+        @media (max-width: breakpoints.$breakpoint-md) {
+          font-size: typography.$font-secondary;
+        }
+      }
+
+      p {
+        font-size: typography.$font-primary;
+        color: colors.color("neutral", "medium");
+        line-height: 1.6;
+        text-align: center;
+        
+        @media (max-width: breakpoints.$breakpoint-md) {
+          font-size: typography.$font-secondary;
+        }
+      }
+    }
+
+    // Hover effect for icon
+    &:hover &__icon {
+      transform: scale(1.1);
+      background: linear-gradient(135deg, 
+        rgba(colors.color("orange", "primary"), 0.3), 
+        rgba(colors.color("orange", "primary"), 0.2)
+      );
+    }
+  }
+}
