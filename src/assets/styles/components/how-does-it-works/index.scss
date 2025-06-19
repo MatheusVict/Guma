@@ -1,0 +1,18 @@
+@use "../../variables/colors" as colors;
+@use "../../variables/base" as base;
+@use "../../variables/typography" as typography;
+@use "../../variables/breakpoints" as breakpoints;
+@use "../../mixins/flex" as flex;
+
+.how-does-it-work {
+  @include flex.flex-row();
+  align-items: center;
+  justify-content: space-between;
+  gap: 7rem;
+  border: 2px solid gray;
+  border-radius: 10px;
+  padding: 1.5rem;
+  aside {
+    padding-left: 6rem;
+  }
+}

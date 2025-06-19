@@ -24,4 +24,5 @@ import Image1 from "@/assets/img/homeSections/two-serious-business-cats-in-suits
 
 
 <style lang="scss" scoped>
+@import "../../../assets/styles/components/how-does-it-works/index";
 </style>
