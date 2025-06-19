@@ -2,26 +2,30 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import HamburgerMenu from '@/components/HamburgerMenu.vue'
 
+import maraya from '../../public/maraya.png'
+import mrpunk from '../../public/mrpunkk.png'
+import matheus from '../../public/matheus.png'
+
 const teamMembers = ref([
   {
     id: 1,
     name: 'Matheus',
     description: 'The visionary architect who turns coffee into code and dreams into digital reality. Master of late-night debugging sessions.',
-    image: '/placeholder-avatar-1.jpg',
+    image: matheus,
     delay: '0s'
   },
   {
     id: 2,
     name: 'Mariah',
     description: 'The creative genius who paints pixels with passion and designs experiences that make hearts skip a beat.',
-    image: '/placeholder-avatar-2.jpg',
+    image: maraya,
     delay: '0.2s'
   },
   {
     id: 3,
     name: 'Gustavo',
     description: 'The problem-solving wizard who speaks fluent algorithm and has a superpower for making complex things simple.',
-    image: '/placeholder-avatar-3.jpg',
+    image: mrpunk,
     delay: '0.4s'
   }
 ])
@@ -129,7 +133,9 @@ onUnmounted(() => {
             <div class="member-image-container">
               <div class="member-image">
                 <div class="placeholder-avatar">
-                  <span class="avatar-initial">{{ member.name.charAt(0) }}</span>
+                    <img :src="member.image" alt="" class="avatar-initial"/>
+                </div>
+                <div class="overlay">
                 </div>
                 <div class="image-overlay"></div>
               </div>
