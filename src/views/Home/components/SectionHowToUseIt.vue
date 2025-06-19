@@ -1,7 +1,7 @@
 <template>
   <section class="how-to-use-it">
     <header>
-      <h2>How to use it?</h2>
+      <h2>How to <span>use</span> it?</h2>
     </header>
 
     <div class="wrapper">
@@ -50,8 +50,20 @@ function getIcon(stepId) {
 </script>
 
 <style lang="scss" scoped>
+@use "../../../assets/styles/variables/colors" as colors;
+@use "../../../assets/styles/variables/base" as base;
+@use "../../../assets/styles/variables/typography" as typography;
+@use "../../../assets/styles/variables/breakpoints" as breakpoints;
+@use "../../../assets/styles/mixins/flex" as flex;
 .how-to-use-it {
   padding: 2rem 0;
+  h2 {
+    text-align: center;
+    span {
+      color: colors.color('orange', 'dark-2');
+    }
+  }
+
 
   .wrapper {
     display: flex;
@@ -70,14 +82,16 @@ function getIcon(stepId) {
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    border: none;
     background: transparent;
     cursor: pointer;
     transition: all 0.3s ease;
-
+    border: 1px solid gray;
+    border-radius: 10px;
     &.active {
       font-weight: bold;
       transform: scale(1.05);
+      color: colors.color('orange', 'dark-2');
+      border-color: colors.color('orange', 'dark-2');
     }
 
     img {
@@ -88,7 +102,9 @@ function getIcon(stepId) {
 
   .steps-content {
     flex: 1;
-    padding: 1rem;
+    padding: base.$padding-xl;
+    border: 2px solid gray;
+    border-radius: 10px;
 
     h3 {
       margin-bottom: 1rem;
