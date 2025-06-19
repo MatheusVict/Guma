@@ -22,12 +22,12 @@
   flex: 0 0 auto;
   position: relative;
   z-index: 2;
-  margin-right: base.$margin-xxl;
+  margin-right: base.$margin-xl;
   
   img {
     max-width: 400px;
     width: 100%;
-    height: auto;
+    height: 200px;
     filter: drop-shadow(0 10px 30px rgba(colors.color("orange", "primary"), 0.3));
     animation: imageFloat 6s ease-in-out infinite;
   }
@@ -49,16 +49,61 @@
   }
 }
 
+.hero-divider {
+  width: 2px;
+  height: 300px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(colors.color("orange", "primary"), 0.3) 20%,
+    rgba(colors.color("orange", "primary"), 0.8) 50%,
+    rgba(colors.color("gold", "primary"), 0.8) 50%,
+    rgba(colors.color("gold", "primary"), 0.3) 80%,
+    transparent 100%
+  );
+  border-radius: 1px;
+  position: relative;
+  margin: 0 base.$margin-xl;
+  animation: dividerGlow 3s ease-in-out infinite alternate;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: colors.color("orange", "primary");
+    border-radius: 50%;
+    box-shadow: 0 0 15px rgba(colors.color("orange", "primary"), 0.6);
+    animation: dotPulse 2s ease-in-out infinite;
+  }
+  
+  @media (max-width: breakpoints.$breakpoint-lg) {
+    display: none;
+  }
+}
+
 .hero-content {
   flex: 1;
   max-width: 600px;
   position: relative;
   z-index: 2;
-  @include flex.flex-column(flex-start, flex-start, nowrap, base.$size-lg);
+  @include flex.flex-column(center, flex-start, nowrap, base.$size-lg);
   
   @media (max-width: breakpoints.$breakpoint-lg) {
     @include flex.flex-column(center, center, nowrap, base.$size-lg);
     max-width: 100%;
+    text-align: center;
+  }
+}
+
+.hero-text {
+  @include flex.flex-column(flex-start, flex-start, nowrap, base.$size-lg);
+  
+  @media (max-width: breakpoints.$breakpoint-lg) {
+    @include flex.flex-column(center, center, nowrap, base.$size-lg);
     text-align: center;
   }
   
@@ -98,8 +143,17 @@
     font-weight: map-get(typography.$font-weights, 'regular');
     line-height: map-get(typography.$line-heights, 'relaxed');
     color: colors.color("neutral", "gray-lighter");
-    margin: 0 0 base.$margin-xl 0;
+    margin: 0;
     max-width: 500px;
+  }
+}
+
+.hero-button {
+  margin-top: base.$margin-xl;
+  align-self: flex-start;
+  
+  @media (max-width: breakpoints.$breakpoint-lg) {
+    align-self: center;
   }
 }
 
@@ -122,5 +176,27 @@
   }
   100% {
     box-shadow: 0 0 20px rgba(colors.color("orange", "primary"), 0.8);
+  }
+}
+
+@keyframes dividerGlow {
+  0% {
+    opacity: 0.6;
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0.5px);
+  }
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 1;
   }
 }
