@@ -82,6 +82,7 @@ const scrollToSection = (sectionId) => {
 @use "../assets/styles/variables/colors" as colors;
 @use "../assets/styles/variables/base" as base;
 @use "../assets/styles/variables/breakpoints" as breakpoints;
+@use "../assets/styles/variables/typography" as typography;
 
 .hamburger-menu {
   position: fixed;
@@ -161,23 +162,55 @@ const scrollToSection = (sectionId) => {
 
 .menu {
   position: fixed;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 100vh;
+  top: 80px;
+  right: 20px;
+  width: 280px;
   background: colors.color("dark", "dark-2");
-  transform: translateX(100%);
-  transition: transform 0.3s ease;
+  border-radius: 12px;
+  transform: translateY(-20px) scale(0.9);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   z-index: 1001;
-  padding-top: 100px;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+  padding: 20px 0;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  border: 1px solid colors.color("neutral", "gray-dark");
 
   &.active {
-    transform: translateX(0);
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    visibility: visible;
   }
 
-  @media (max-width: 400px) {
-    width: 100vw;
+  @media (max-width: 320px) {
+    width: calc(100vw - 40px);
+    right: 20px;
+    left: 20px;
+  }
+
+  // Add a subtle arrow pointing to the hamburger button
+  &::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    right: 25px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid colors.color("dark", "dark-2");
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -9px;
+    right: 25px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid colors.color("neutral", "gray-dark");
   }
 }
 
@@ -188,43 +221,54 @@ const scrollToSection = (sectionId) => {
 }
 
 .menu-item {
-  border-bottom: 1px solid colors.color("neutral", "gray-dark");
+  margin: 4px 12px;
+  border-radius: 8px;
+  overflow: hidden;
+   a {
+     font-family: typography.$font-secondary;
+   }
+
+  &:first-child {
+    margin-top: 0;
+  }
 
   &:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
   }
 }
 
 .menu-link {
   display: block;
-  padding: 20px 30px;
+  padding: 16px 20px;
   color: colors.color("neutral", "white-off");
   text-decoration: none;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 500;
   transition: all 0.3s ease;
   position: relative;
+  border-radius: 8px;
 
   &:hover {
     background: colors.color("orange", "primary");
     color: colors.color("neutral", "white-off");
-    padding-left: 40px;
+    transform: translateX(4px);
   }
 
   &::before {
     content: '';
     position: absolute;
     left: 0;
-    top: 0;
-    height: 100%;
-    width: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 0;
+    width: 3px;
     background: colors.color("orange", "primary");
-    transform: scaleY(0);
-    transition: transform 0.3s ease;
+    border-radius: 0 2px 2px 0;
+    transition: height 0.3s ease;
   }
 
   &:hover::before {
-    transform: scaleY(1);
+    height: 60%;
   }
 }
 </style>
