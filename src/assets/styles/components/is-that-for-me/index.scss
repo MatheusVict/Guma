@@ -5,36 +5,165 @@
 @use "../../mixins/flex" as flex;
 
 .main-content {
-  text-align: center;
-  span {
-    color: colors.color('orange', 'dark-2');
+  padding: base.$padding-xxl 0;
+  margin: base.$margin-xl 0;
+  
+  @media (max-width: breakpoints.$breakpoint-md) {
+    padding: base.$padding-xl 0;
+    margin: base.$margin-lg 0;
+  }
+  
+  @media (max-width: breakpoints.$breakpoint-sm) {
+    padding: base.$padding-lg 0;
+  }
+  
+  header {
+    text-align: center;
+    margin-bottom: base.$margin-xxl;
+    
+    @media (max-width: breakpoints.$breakpoint-sm) {
+      margin-bottom: base.$margin-xl;
+    }
+  }
+  
+  h2 {
+    font-family: typography.$font-secondary;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: map-get(typography.$font-weights, 'semi-bold');
+    color: colors.color("neutral", "white-off");
+    line-height: map-get(typography.$line-heights, 'tight');
+    
+    span {
+      color: colors.color('orange', 'primary');
+    }
   }
 }
 
 .content {
-  @include flex.flex-row();
-  gap: 3rem;
-  justify-content: space-around;
-  align-items: center;
+  @include flex.flex-row(center, center, nowrap, 3rem);
   margin-top: 5rem;
+  
+  @media (max-width: breakpoints.$breakpoint-lg) {
+    @include flex.flex-column(center, center, nowrap, 2rem);
+    margin-top: 3rem;
+  }
+  
+  @media (max-width: breakpoints.$breakpoint-md) {
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+  
+  @media (max-width: breakpoints.$breakpoint-sm) {
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
 
   aside {
-    background-color: #111; /* fundo escuro */
-    color: white;
-    padding: 20px;
+    background: linear-gradient(135deg, 
+      rgba(colors.color("dark", "dark-2"), 0.9), 
+      rgba(colors.color("neutral", "gray-darkest"), 0.8)
+    );
+    color: colors.color("neutral", "white-off");
+    padding: base.$padding-xl;
     width: 300px;
+    max-width: 100%;
     border-radius: 20px;
     clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
-    border: 1px solid gray;
+    border: 2px solid rgba(colors.color("neutral", "gray-dark"), 0.3);
+    backdrop-filter: blur(10px);
+    @include flex.flex-column(center, center, nowrap, base.$size-md);
+    
+    @media (max-width: breakpoints.$breakpoint-lg) {
+      clip-path: none;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+    }
+    
+    @media (max-width: breakpoints.$breakpoint-md) {
+      padding: base.$padding-lg;
+      border-radius: 12px;
+    }
+    
+    @media (max-width: breakpoints.$breakpoint-sm) {
+      padding: base.$padding-md;
+      border-radius: 8px;
+      max-width: 100%;
+    }
+    
+    img {
+      max-width: 200px;
+      width: 100%;
+      height: auto;
+      filter: drop-shadow(0 8px 24px rgba(colors.color("orange", "primary"), 0.2));
+      
+      @media (max-width: breakpoints.$breakpoint-lg) {
+        max-width: 180px;
+      }
+      
+      @media (max-width: breakpoints.$breakpoint-md) {
+        max-width: 150px;
+      }
+      
+      @media (max-width: breakpoints.$breakpoint-sm) {
+        max-width: 120px;
+      }
+    }
   }
+  
   article {
-    background-color: #111;
-    color: white;
-    padding: 20px;
+    background: linear-gradient(135deg, 
+      rgba(colors.color("dark", "dark-2"), 0.9), 
+      rgba(colors.color("neutral", "gray-darkest"), 0.8)
+    );
+    color: colors.color("neutral", "white-off");
+    padding: base.$padding-xl;
     width: 300px;
+    max-width: 100%;
     border-radius: 20px;
     clip-path: polygon(0 0, 90% 0%, 100% 100%, 10% 100%);
-    border: 1px solid #333;
+    border: 2px solid rgba(colors.color("neutral", "gray-dark"), 0.3);
+    backdrop-filter: blur(10px);
     min-width: 25vw;
+    
+    @media (max-width: breakpoints.$breakpoint-lg) {
+      clip-path: none;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      min-width: auto;
+    }
+    
+    @media (max-width: breakpoints.$breakpoint-md) {
+      padding: base.$padding-lg;
+      border-radius: 12px;
+    }
+    
+    @media (max-width: breakpoints.$breakpoint-sm) {
+      padding: base.$padding-md;
+      border-radius: 8px;
+      max-width: 100%;
+    }
+    
+    p {
+      font-family: typography.$font-primary;
+      font-size: map-get(typography.$font-sizes, 'base');
+      color: colors.color("neutral", "gray-lighter");
+      line-height: map-get(typography.$line-heights, 'relaxed');
+      margin-bottom: base.$margin-md;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+      
+      @media (max-width: breakpoints.$breakpoint-md) {
+        font-size: map-get(typography.$font-sizes, 'sm');
+        margin-bottom: base.$margin-sm;
+      }
+      
+      @media (max-width: breakpoints.$breakpoint-sm) {
+        font-size: map-get(typography.$font-sizes, 'xs');
+      }
+    }
   }
 }

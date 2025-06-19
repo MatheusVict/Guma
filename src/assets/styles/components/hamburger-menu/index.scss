@@ -1,8 +1,7 @@
 @use "../../variables/colors" as colors;
 @use "../../variables/base" as base;
-@use "../../variables/typography" as typography;
 @use "../../variables/breakpoints" as breakpoints;
-@use "../../mixins/flex" as flex;
+@use "../../variables/typography" as typography;
 
 .hamburger-menu {
   position: fixed;

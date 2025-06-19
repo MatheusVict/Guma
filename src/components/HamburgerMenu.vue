@@ -103,7 +103,6 @@ const toggleBodyScroll = (disable) => {
   }
 }
 
-// Watch for menu state changes
 watch(isMenuOpen, (newValue) => {
   toggleBodyScroll(newValue)
 })

@@ -1,6 +1,7 @@
 @use "../../variables/colors" as colors;
 @use "../../variables/base" as base;
 @use "../../variables/typography" as typography;
+@use "../../variables/breakpoints" as breakpoints;
 
 .button-primary {
   display: inline-block;
@@ -17,10 +18,34 @@
   text-decoration: none;
   transition: all 0.3s ease-in-out;
 
+  // Mobile responsive adjustments
+  @media (max-width: breakpoints.$breakpoint-md) {
+    padding: base.$padding-sm base.$padding-lg;
+    font-size: map-get(typography.$font-sizes, 'sm');
+  }
+
+  @media (max-width: breakpoints.$breakpoint-sm) {
+    padding: base.$padding-xs base.$padding-md;
+    font-size: map-get(typography.$font-sizes, 'xs');
+    width: 100%;
+    max-width: 280px;
+  }
+
+  @media (max-width: breakpoints.$breakpoint-xs) {
+    padding: 10px 16px;
+    font-size: 14px;
+    border-radius: base.$border-radius-md;
+  }
+
   &:hover {
     background-color: rgba(colors.color("orange", "primary"), 0.1);
     box-shadow: 0 0 8px colors.color("orange", "primary");
     transform: translateY(-2px);
+
+    // Disable hover transform on touch devices
+    @media (hover: none) {
+      transform: none;
+    }
   }
 
   &:focus {
@@ -31,5 +56,6 @@
   &:active {
     transform: translateY(0);
     box-shadow: none;
+    background-color: rgba(colors.color("orange", "primary"), 0.2);
   }
 }
