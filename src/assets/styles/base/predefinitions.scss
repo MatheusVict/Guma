@@ -1,10 +1,11 @@
 @use 'typography';
 @use "../mixins/flex" as flex;
+@use "../mixins/text-styles" as text;
 @use "../variables/colors" as colors;
 @use "../variables/base" as base;
+@use "../variables/typography" as typo;
 
 
-// Custom scrollbar styles
 ::-webkit-scrollbar {
   width: base.$size-md;
   background: colors.color("dark", "dark-2");
@@ -40,4 +41,112 @@ body {
   min-height: 99vh;
   color: colors.color("neutral", "white-off");
   position: relative;
+}
+
+
+p {
+  @include text.body-default;
+  color: colors.color("neutral", "white-off");
+  margin-bottom: base.$margin-sm;
+  font-weight: map-get(typo.$font-weights, 'regular');
+  line-height: map-get(typo.$line-heights, 'relaxed');
+
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+
+  &.lead {
+    @include text.body-large;
+    font-weight: 300;
+    margin-bottom: base.$margin-lg;
+  }
+
+  &.small {
+    @include text.body-small;
+    margin-bottom: base.$margin-sm;
+  }
+
+  &.caption {
+    @include text.caption;
+    color: colors.color("neutral", "gray-light");
+    margin-bottom: base.$margin-xs;
+  }
+
+
+  &.text-muted {
+    color: colors.color("neutral", "gray-light");
+  }
+
+  &.text-accent {
+    color: colors.color("orange", "primary");
+  }
+
+  &.text-warning {
+    color: colors.color("yellow", "primary");
+  }
+
+  &.text-success {
+    color: colors.color("green", "medium-2");
+  }
+
+  &.text-error {
+    color: colors.color("red", "primary");
+  }
+}
+
+
+strong, b {
+  font-weight: 600;
+  color: colors.color("neutral", "white-off");
+}
+
+em, i {
+  font-style: italic;
+  color: colors.color("orange", "light-1");
+}
+
+
+a {
+  color: colors.color("orange", "primary");
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: all 0.3s ease;
+
+  &:hover {
+    color: colors.color("orange", "light-1");
+    border-bottom-color: colors.color("orange", "light-1");
+  }
+
+  &:focus {
+    outline: 2px solid colors.color("orange", "primary");
+    outline-offset: 2px;
+  }
+}
+
+
+q {
+  font-style: italic;
+  color: colors.color("neutral", "gray-light");
+
+  &::before {
+    content: '"';
+    color: colors.color("orange", "primary");
+  }
+
+  &::after {
+    content: '"';
+    color: colors.color("orange", "primary");
+  }
+}
+
+
+code {
+  background-color: colors.color("dark", "dark-2");
+  color: colors.color("orange", "light-1");
+  padding: base.$padding-xs base.$padding-sm;
+  border-radius: base.$border-radius-sm;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
 }
