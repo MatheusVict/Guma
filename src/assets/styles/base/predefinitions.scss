@@ -1,0 +1,27 @@
+@use 'typography';
+@use "../mixins/flex" as flex;
+@use "../variables/colors" as colors;
+@use "../variables/base" as base;
+
+
+// Custom scrollbar styles
+::-webkit-scrollbar {
+  width: base.$size-md;
+  background: colors.color("dark", "dark-2");
+}
+
+::-webkit-scrollbar-track {
+  border-radius: base.$border-radius-base;
+  background: colors.color("dark", "dark-2");
+  height: base.$size-sm;
+
+}
+
+::-webkit-scrollbar-thumb {
+  border: base.$border-primary-gray;
+  border-radius: base.$border-radius-base
+}
+
+::-webkit-scrollbar-thumb:hover {
+  border-color: colors.color("orange");
+}

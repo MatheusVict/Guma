@@ -1,0 +1,99 @@
+<script setup>
+import Hero from '../../components/Hero.vue'
+import Separator from "@/components/Separator.vue";
+import SectionWhyDoYouNeed from "@/views/Home/components/SectionWhyDoYouNeed.vue";
+import SectionHowDoesItWork from "@/views/Home/components/SectionHowDoesItWork.vue";
+import SectionHowToUseIt from "@/views/Home/components/SectionHowToUseIt.vue";
+import SectionIsThatForMe from "@/views/Home/components/SectionIsThatForMe.vue";
+import Footer from "@/components/Footer.vue";
+import HamburgerMenu from "@/components/HamburgerMenu.vue";
+</script>
+
+<template>
+  <main>
+    <!-- Hamburger Menu -->
+    <HamburgerMenu />
+    
+    <!-- Hero Section -->
+    <section id="hero">
+      <Hero/>
+    </section>
+
+    <Separator/>
+
+    <!-- Why Do You Need Section -->
+    <section id="why-do-you-need">
+      <SectionWhyDoYouNeed/>
+    </section>
+
+    <Separator/>
+
+    <!-- How Does It Work Section -->
+    <section id="how-does-it-work">
+      <SectionHowDoesItWork/>
+    </section>
+
+    <Separator/>
+
+    <!-- How To Use It Section -->
+    <section id="how-to-use-it">
+      <SectionHowToUseIt/>
+    </section>
+
+    <Separator/>
+
+    <!-- Is That For Me Section -->
+    <section id="is-that-for-me">
+      <SectionIsThatForMe/>
+    </section>
+
+    <Footer/>
+  </main>
+</template>
+
+<style lang="scss" scoped>
+@use "../../assets/styles/variables/colors" as colors;
+@use "../../assets/styles/variables/base" as base;
+@use "../../assets/styles/variables/breakpoints" as breakpoints;
+@use "../../assets/styles/mixins/flex" as flex;
+
+main {
+  background-color: colors.color("dark", "dark-2");
+  @include flex.flex-column(flex-start, center, no-wrap, base.$size-xxxxl);
+  color: colors.color("neutral", "white-off");
+  width: 100%;
+  min-height: 100vh;
+  padding: 0 base.$padding-lg;
+  
+  @media (max-width: breakpoints.$breakpoint-lg) {
+    padding: 0 base.$padding-md;
+    gap: base.$size-xxxl;
+  }
+  
+  @media (max-width: breakpoints.$breakpoint-md) {
+    padding: 0 base.$padding-sm;
+    gap: base.$size-xxl;
+  }
+  
+  @media (max-width: breakpoints.$breakpoint-sm) {
+    padding: 0 base.$padding-xs;
+    gap: base.$size-xl;
+  }
+  
+  @media (max-width: breakpoints.$breakpoint-xs) {
+    padding: 0 8px;
+    gap: base.$size-lg;
+  }
+  
+  // Ensure sections don't overflow
+  section {
+    width: 100%;
+    max-width: 1200px;
+    
+    @media (max-width: breakpoints.$breakpoint-xl) {
+      max-width: 100%;
+    }
+  }
+}
+
+</style>

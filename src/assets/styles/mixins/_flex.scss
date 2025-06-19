@@ -1,0 +1,98 @@
+// Flex Mixins
+// Um conjunto completo de mixins para trabalhar com flexbox de forma fácil e configurvel
+
+// Mixin principal para configuração flexbox
+@mixin flex(
+  $display: flex,
+  $direction: row,
+  $wrap: nowrap,
+  $justify: flex-start,
+  $align: stretch,
+  $align-content: stretch,
+  $gap: 0
+) {
+  display: $display;
+  flex-direction: $direction;
+  flex-wrap: $wrap;
+  justify-content: $justify;
+  align-items: $align;
+  align-content: $align-content;
+  @if $gap != 0 {
+    gap: $gap;
+  }
+}
+
+// Mixin para flex row (linha)
+@mixin flex-row(
+  $justify: flex-start,
+  $align: center,
+  $wrap: nowrap,
+  $gap: 0
+) {
+  @include flex(flex, row, $wrap, $justify, $align, stretch, $gap);
+}
+
+// Mixin para flex column (coluna)
+@mixin flex-column(
+  $justify: flex-start,
+  $align: center,
+  $wrap: nowrap,
+  $gap: 0
+) {
+  @include flex(flex, column, $wrap, $justify, $align, stretch, $gap);
+}
+
+// Mixin para centralizar completamente com flex
+@mixin flex-center($gap: 0) {
+  @include flex(flex, row, nowrap, center, center, center, $gap);
+}
+
+// Mixin para propriedades de flex item
+@mixin flex-item(
+  $grow: 0,
+  $shrink: 1,
+  $basis: auto,
+  $align-self: auto
+) {
+  flex-grow: $grow;
+  flex-shrink: $shrink;
+  flex-basis: $basis;
+  align-self: $align-self;
+}
+
+// Atalho para flex: 1 (item que cresce para preencher espaço disponível)
+@mixin flex-grow {
+  flex: 1;
+}
+
+// Mixin para espaçamento entre itens (alternativa ao gap para maior compatibilidade)
+@mixin flex-space($margin) {
+  > * {
+    margin-right: $margin;
+    margin-bottom: $margin;
+    
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+  
+  &:last-row {
+    margin-bottom: 0;
+  }
+}
+
+// Mixin para grid com flexbox
+@mixin flex-grid(
+  $columns: 3,
+  $gap: 1rem,
+  $width: 100%
+) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $gap;
+  width: $width;
+  
+  > * {
+    flex: 0 0 calc((100% - (($columns - 1) * $gap)) / $columns);
+  }
+}
