@@ -7,6 +7,11 @@
 @forward "components/hero/hero";
 @forward "components/buttons/buttons";
 
+// Smooth scrolling for the entire page
+html {
+  scroll-behavior: smooth;
+}
+
 // Global page background
 body {
   background: linear-gradient(

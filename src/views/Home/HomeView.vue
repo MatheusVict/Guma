@@ -6,27 +6,46 @@ import SectionHowDoesItWork from "@/views/Home/components/SectionHowDoesItWork.v
 import SectionHowToUseIt from "@/views/Home/components/SectionHowToUseIt.vue";
 import SectionIsThatForMe from "@/views/Home/components/SectionIsThatForMe.vue";
 import Footer from "@/components/Footer.vue";
+import HamburgerMenu from "@/components/HamburgerMenu.vue";
 </script>
 
 <template>
   <main>
-    <Hero/>
+    <!-- Hamburger Menu -->
+    <HamburgerMenu />
+    
+    <!-- Hero Section -->
+    <section id="hero">
+      <Hero/>
+    </section>
 
     <Separator/>
 
-    <SectionWhyDoYouNeed/>
+    <!-- Why Do You Need Section -->
+    <section id="why-do-you-need">
+      <SectionWhyDoYouNeed/>
+    </section>
 
     <Separator/>
 
-    <SectionHowDoesItWork/>
+    <!-- How Does It Work Section -->
+    <section id="how-does-it-work">
+      <SectionHowDoesItWork/>
+    </section>
 
     <Separator/>
 
-    <SectionHowToUseIt/>
+    <!-- How To Use It Section -->
+    <section id="how-to-use-it">
+      <SectionHowToUseIt/>
+    </section>
 
     <Separator/>
 
-    <SectionIsThatForMe/>
+    <!-- Is That For Me Section -->
+    <section id="is-that-for-me">
+      <SectionIsThatForMe/>
+    </section>
 
     <Footer/>
   </main>
