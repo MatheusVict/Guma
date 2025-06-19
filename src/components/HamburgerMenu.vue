@@ -17,33 +17,37 @@
       @click="closeMenu"
     ></div>
 
-    <!-- Menu -->
     <nav
       class="menu"
       :class="{ 'active': isMenuOpen }"
     >
       <ul class="menu-list">
         <li class="menu-item">
-          <a href="#hero" @click="scrollToSection('hero')" class="menu-link">
+          <router-link to="/" @click="closeMenu" class="menu-link">
             Home
-          </a>
+          </router-link>
         </li>
         <li class="menu-item">
+          <router-link to="/about" @click="closeMenu" class="menu-link">
+            About Opaleiros
+          </router-link>
+        </li>
+        <li class="menu-item" v-if="$route.name === 'home'">
           <a href="#why-do-you-need" @click="scrollToSection('why-do-you-need')" class="menu-link">
             Why Do You Need
           </a>
         </li>
-        <li class="menu-item">
+        <li class="menu-item" v-if="$route.name === 'home'">
           <a href="#how-does-it-work" @click="scrollToSection('how-does-it-work')" class="menu-link">
             How Does It Work
           </a>
         </li>
-        <li class="menu-item">
+        <li class="menu-item" v-if="$route.name === 'home'">
           <a href="#how-to-use-it" @click="scrollToSection('how-to-use-it')" class="menu-link">
             How To Use It
           </a>
         </li>
-        <li class="menu-item">
+        <li class="menu-item" v-if="$route.name === 'home'">
           <a href="#is-that-for-me" @click="scrollToSection('is-that-for-me')" class="menu-link">
             Is That For Me
           </a>

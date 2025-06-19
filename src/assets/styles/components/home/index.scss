@@ -1,0 +1,44 @@
+@use "../../variables/colors" as colors;
+@use "../../variables/base" as base;
+@use "../../variables/typography" as typography;
+@use "../../variables/breakpoints" as breakpoints;
+@use "../../mixins/flex" as flex;
+
+main {
+  background-color: colors.color("dark", "dark-2");
+  @include flex.flex-column(flex-start, center, no-wrap, base.$size-xxxxl);
+  color: colors.color("neutral", "white-off");
+  width: 100%;
+  min-height: 100vh;
+  padding: 0 base.$padding-lg;
+
+  @media (max-width: breakpoints.$breakpoint-lg) {
+    padding: 0 base.$padding-md;
+    gap: base.$size-xxxl;
+  }
+
+  @media (max-width: breakpoints.$breakpoint-md) {
+    padding: 0 base.$padding-sm;
+    gap: base.$size-xxl;
+  }
+
+  @media (max-width: breakpoints.$breakpoint-sm) {
+    padding: 0 base.$padding-xs;
+    gap: base.$size-xl;
+  }
+
+  @media (max-width: breakpoints.$breakpoint-xs) {
+    padding: 0 8px;
+    gap: base.$size-lg;
+  }
+
+  // Ensure sections don't overflow
+  section {
+    width: 100%;
+    max-width: 1200px;
+
+    @media (max-width: breakpoints.$breakpoint-xl) {
+      max-width: 100%;
+    }
+  }
+}
