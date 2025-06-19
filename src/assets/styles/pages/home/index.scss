@@ -10,26 +10,26 @@ main {
   color: colors.color("neutral", "white-off");
   width: 100%;
   min-height: 100vh;
-  padding: 0 base.$padding-lg;
+
+  .wrapper {
+    padding: base.$padding-md;
+  }
 
   @media (max-width: breakpoints.$breakpoint-lg) {
-    padding: 0 base.$padding-md;
     gap: base.$size-xxxl;
   }
 
+  // Ensure sections don't overflow
   @media (max-width: breakpoints.$breakpoint-md) {
-    padding: 0 base.$padding-sm;
     gap: base.$size-xxl;
   }
 
   @media (max-width: breakpoints.$breakpoint-sm) {
-    padding: 0 base.$padding-xs;
     gap: base.$size-xl;
   }
 
   @media (max-width: breakpoints.$breakpoint-xs) {
-    padding: 0 8px;
-    gap: base.$size-lg;
+    gap: base.$size-xxxl;
   }
 
   // Ensure sections don't overflow

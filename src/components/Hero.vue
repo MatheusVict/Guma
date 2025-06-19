@@ -12,15 +12,18 @@ import ButtonPrimary from "../components/buttons/ButtonPrimary.vue";
 
     <div class="hero-content">
       <div class="hero-text">
-        <h1>Guma Agent</h1>
+        <h1>Guma Agent: Pare de Adivinhar, Comece a Acertar.</h1>
 
         <p>
-          Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ab eius eligendi id ipsum labore minus nam nemo similique temporibus ullam!
+          Cansado de rubricas confusas e feedbacks que não ajudam? O <strong>Guma Agent</strong> é seu assistente de IA
+          que analisa suas tarefas acadêmicas, alinha com os critérios do Canvas e te dá o <em>feedback exato</em> para
+          você <strong>melhorar cada entrega e gabaritar suas disciplinas</strong>. <strong>Não perca mais tempo com a
+          dúvida. Comece a dominar suas entregas hoje.</strong>
         </p>
       </div>
 
       <div class="hero-button">
-        <ButtonPrimary text="Get it now"/>
+        <ButtonPrimary text="Experimente Agora!"/>
       </div>
     </div>
   </div>

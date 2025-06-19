@@ -25,3 +25,19 @@
 ::-webkit-scrollbar-thumb:hover {
   border-color: colors.color("orange");
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: linear-gradient(
+                  134deg,
+                  colors.color("dark", "dark-3") 0%,
+                  colors.color("dark", "primary") 49%,
+                  colors.color("dark", "dark-3") 100%
+  ) fixed;
+  min-height: 99vh;
+  color: colors.color("neutral", "white-off");
+  position: relative;
+}
