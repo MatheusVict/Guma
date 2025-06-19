@@ -31,75 +31,22 @@ const teamMembers = ref([
 ])
 
 const isLoaded = ref(false)
-const audioRef = ref(null)
-const audioContext = ref(null)
-const oscillator = ref(null)
-
-const createAmbientSound = () => {
-  try {
-    // Create a simple ambient sound using Web Audio API
-    audioContext.value = new (window.AudioContext || window.webkitAudioContext)()
-
-    // Create oscillator for ambient sound
-    oscillator.value = audioContext.value.createOscillator()
-    const gainNode = audioContext.value.createGain()
-
-    // Configure oscillator for ambient sound
-    oscillator.value.type = 'sine'
-    oscillator.value.frequency.setValueAtTime(220, audioContext.value.currentTime) // A3 note
-
-    // Very low volume
-    gainNode.gain.setValueAtTime(0.02, audioContext.value.currentTime)
-
-    // Connect nodes
-    oscillator.value.connect(gainNode)
-    gainNode.connect(audioContext.value.destination)
-
-    // Start the sound
-    oscillator.value.start()
-
-    // Add some variation to make it more ambient
-    setInterval(() => {
-      if (oscillator.value && audioContext.value) {
-        const frequency = 220 + Math.sin(Date.now() / 1000) * 20
-        oscillator.value.frequency.setValueAtTime(frequency, audioContext.value.currentTime)
-      }
-    }, 100)
-
-  } catch (error) {
-    console.log('Web Audio API not supported or blocked')
-  }
-}
 
 onMounted(() => {
   setTimeout(() => {
     isLoaded.value = true
   }, 100)
-
-  const startAudio = () => {
-    createAmbientSound()
-    document.removeEventListener('click', startAudio)
-    document.removeEventListener('keydown', startAudio)
-  }
-
-  document.addEventListener('click', startAudio)
-  document.addEventListener('keydown', startAudio)
-})
-
-onUnmounted(() => {
-  if (oscillator.value) {
-    oscillator.value.stop()
-    oscillator.value = null
-  }
-  if (audioContext.value) {
-    audioContext.value.close()
-    audioContext.value = null
-  }
 })
 </script>
 
 <template>
   <main class="about-page">
+    <audio autoplay loop preload="auto" style="display: none;">
+      <source src="/ambient-sound.mp3" type="audio/mpeg">
+      <source src="/ambient-sound.ogg" type="audio/ogg">
+      Your browser does not support the audio element.
+    </audio>
+
     <HamburgerMenu />
 
     <div class="floating-elements">

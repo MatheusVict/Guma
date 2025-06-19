@@ -17,7 +17,6 @@
       @click="closeMenu"
     ></div>
 
-    <!-- Menu -->
     <nav
       class="menu"
       :class="{ 'active': isMenuOpen }"
