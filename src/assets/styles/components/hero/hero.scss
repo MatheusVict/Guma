@@ -110,10 +110,10 @@
   }
   
   h1 {
-    font-family: typography.$font-secondary;
     font-size: clamp(2.5rem, 5vw, 4rem);
-    font-weight: map-get(typography.$font-weights, 'regular');
+    font-family: typography.$font-secondary;
     line-height: map-get(typography.$line-heights, 'tight');
+    font-weight: map-get(typography.$font-weights, 'regular');
     margin: 0 0 base.$margin-lg 0;
     background: linear-gradient(135deg, colors.color("orange", "primary"), colors.color("gold", "primary"));
     -webkit-background-clip: text;

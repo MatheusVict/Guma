@@ -13,6 +13,8 @@ main {
 
   .wrapper {
     padding: base.$padding-md;
+    width: base.$size-100-percent;
+    @include flex.flex-column();
   }
 
   @media (max-width: breakpoints.$breakpoint-lg) {
@@ -35,10 +37,5 @@ main {
   // Ensure sections don't overflow
   section {
     width: 100%;
-    max-width: 1200px;
-
-    @media (max-width: breakpoints.$breakpoint-xl) {
-      max-width: 100%;
-    }
   }
 }
