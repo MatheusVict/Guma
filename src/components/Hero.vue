@@ -1,5 +1,12 @@
 <script setup>
 import ButtonPrimary from "../components/buttons/ButtonPrimary.vue";
+  import {useRouter} from 'vue-router'
+
+  const router = useRouter()
+
+  const goToApp = () => {
+  router.push('/app')
+}
 </script>
 
 <template>
@@ -20,7 +27,7 @@ import ButtonPrimary from "../components/buttons/ButtonPrimary.vue";
       </div>
 
       <div class="hero-button">
-        <ButtonPrimary text="Get it now"/>
+        <ButtonPrimary text="Get it now" @click="goToApp"/>
       </div>
     </div>
   </div>
