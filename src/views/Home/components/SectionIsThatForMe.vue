@@ -1,18 +1,20 @@
 <template>
-  <section>
+  <section class="main-content">
     <header>
-      <h2>Ist that for me?</h2>
+      <h2>Is that for <span>me</span>?</h2>
     </header>
 
-    <aside>
-      <img :src="StudentCatWithBook" alt="Student cat with book"/>
-    </aside>
+    <div class="content">
+      <aside>
+        <img :src="StudentCatWithBook" alt="Student cat with book"/>
+      </aside>
 
-    <article>
-      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Deserunt in officiis possimus.</p>
-      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Neque odit quae repudiandae!</p>
-      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Neque odit quae repudiandae!</p>
-    </article>
+      <article>
+        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Deserunt in officiis possimus.</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Neque odit quae repudiandae!</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Neque odit quae repudiandae!</p>
+      </article>
+    </div>
   </section>
 </template>
 
@@ -21,5 +23,5 @@ import StudentCatWithBook from "@/assets/img/homeSections/student-cat-with-book.
 </script>
 
 <style lang="scss" scoped>
-
+@import "../../../assets/styles/components/is-that-for-me/index";
 </style>

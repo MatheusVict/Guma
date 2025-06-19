@@ -1,0 +1,40 @@
+@use "../../variables/colors" as colors;
+@use "../../variables/base" as base;
+@use "../../variables/typography" as typography;
+@use "../../variables/breakpoints" as breakpoints;
+@use "../../mixins/flex" as flex;
+
+.main-content {
+  text-align: center;
+  span {
+    color: colors.color('orange', 'dark-2');
+  }
+}
+
+.content {
+  @include flex.flex-row();
+  gap: 3rem;
+  justify-content: space-around;
+  align-items: center;
+  margin-top: 5rem;
+
+  aside {
+    background-color: #111; /* fundo escuro */
+    color: white;
+    padding: 20px;
+    width: 300px;
+    border-radius: 20px;
+    clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
+    border: 1px solid gray;
+  }
+  article {
+    background-color: #111;
+    color: white;
+    padding: 20px;
+    width: 300px;
+    border-radius: 20px;
+    clip-path: polygon(0 0, 90% 0%, 100% 100%, 10% 100%);
+    border: 1px solid #333;
+    min-width: 25vw;
+  }
+}
