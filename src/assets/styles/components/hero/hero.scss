@@ -6,10 +6,12 @@
 
 .hero {
   @include flex.flex-row(center, center, nowrap, base.$size-xxxl);
-  min-height: 100vh;
+  min-height: 25vh;
   padding: base.$padding-xxl base.$padding-lg;
   position: relative;
   z-index: 1;
+  border: 2px solid gray;
+  border-radius: 10px;
   
   @media (max-width: breakpoints.$breakpoint-lg) {
     @include flex.flex-column(center, center, nowrap, base.$size-xl);
