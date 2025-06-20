@@ -5,13 +5,12 @@ import Image1 from "@/assets/img/homeSections/two-serious-business-cats-in-suits
 
 <template>
   <section class="how-does-it-work">
-    <aside>
+    <header>
       <h2>How does it work?</h2>
-
-      <img :src="Image1" alt="two serious business cats in suits">
-    </aside>
+    </header>
 
     <article>
+      <img :src="Image1" alt="two serious business cats in suits">
       <video poster="../../../assets/img/homeSections/poster-video.svg">
         <source src="">
       </video>

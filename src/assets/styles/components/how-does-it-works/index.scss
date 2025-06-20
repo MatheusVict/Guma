@@ -5,14 +5,16 @@
 @use "../../mixins/flex" as flex;
 
 .how-does-it-work {
-  @include flex.flex-row(
+  @include flex.flex-column(
                   space-evenly,
-                  center
+                  center,
+          wrap,
+      base.$size-xxl
   );
   border: 2px solid rgba(colors.color("neutral", "gray-dark"), 0.3);
   border-radius: base.$border-radius-md;
   padding: base.$size-xxl;
-  width: auto;
+  max-width: 900px;
 
 
   // Tablet responsive
@@ -66,7 +68,7 @@
       max-width: 300px;
       width: 100%;
       height: auto;
-      filter: drop-shadow(0 8px 24px rgba(colors.color("orange", "primary"), 0.3));
+      filter: drop-shadow(0 8px 24px rgba(colors.color("orange", "primary"), 0.5));
 
       @media (max-width: breakpoints.$breakpoint-lg) {
         max-width: 250px;
@@ -83,8 +85,7 @@
   }
 
   article {
-    position: relative;
-    max-width: 500px;
+    @include flex.flex-row(space-evenly, center, wrap, base.$size-lg);
 
     @media (max-width: breakpoints.$breakpoint-lg) {
       max-width: 100%;
@@ -93,11 +94,12 @@
 
 
     video {
-      width: 100%;
+      width: 60%;
       height: auto;
       border-radius: 12px;
 
       @media (max-width: breakpoints.$breakpoint-sm) {
+        width: 100%;
         border-radius: 8px;
       }
     }
