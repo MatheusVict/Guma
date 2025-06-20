@@ -1,7 +1,7 @@
 <template>
   <section class="main-content">
     <header>
-      <h2>Is that for <span>me</span>?</h2>
+      <h2>Is that for <span class="text-accent">me</span>?</h2>
     </header>
 
     <div class="content">

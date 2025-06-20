@@ -5,8 +5,8 @@
 @use "../../mixins/flex" as flex;
 
 .how-to-use-it {
-  padding: base.$padding-xxl 0;
-  margin: base.$margin-xl 0;
+  max-width: 950px;
+  margin: base.$margin-xl;
 
   @media (max-width: breakpoints.$breakpoint-md) {
     padding: base.$padding-xl 0;
@@ -39,29 +39,31 @@
   }
 
   .wrapper {
-    @include flex.flex-row(flex-start, stretch, nowrap, 2rem);
-    margin-top: 2rem;
+    @include flex.flex-row(flex-start, stretch, nowrap, base.$size-xl);
 
     @media (max-width: breakpoints.$breakpoint-lg) {
-      @include flex.flex-column(flex-start, stretch, nowrap, 1.5rem);
+      @include flex.flex-column(flex-start, stretch, nowrap, base.$size-xl);
     }
 
     @media (max-width: breakpoints.$breakpoint-md) {
-      gap: 1rem;
+      gap: base.$size-md;
     }
   }
 
   .stepsNumber-container {
-    @include flex.flex-column(flex-start, stretch, nowrap, 1rem);
-    min-width: 200px;
+    //min-width: 200px;
+    border-radius: base.$size-md;
+    border: 2px solid colors.color("dark", "primary");
+
+    @include flex.flex-column(center, center, nowrap, base.$size-md);
 
     @media (max-width: breakpoints.$breakpoint-lg) {
-      @include flex.flex-row(flex-start, stretch, wrap, 0.5rem);
       min-width: auto;
+      @include flex.flex-row(flex-start, stretch, wrap, base.$size-md);
     }
 
     @media (max-width: breakpoints.$breakpoint-sm) {
-      @include flex.flex-column(flex-start, stretch, nowrap, 0.5rem);
+      @include flex.flex-row(center, center, wrap, base.$size-md);
     }
   }
 
@@ -70,8 +72,10 @@
     padding: base.$padding-sm base.$padding-md;
     background: transparent;
     color: colors.color("neutral", "white-off");
+
     cursor: pointer;
     transition: all 0.3s ease;
+
     border: 2px solid rgba(colors.color("neutral", "gray-dark"), 0.5);
     border-radius: 12px;
     font-family: typography.$font-primary;
@@ -118,7 +122,7 @@
     img {
       width: 24px;
       height: 24px;
-      filter: brightness(1.2);
+      filter: hue-rotate(hue(colors.color("orange", "primary")));
 
       @media (max-width: breakpoints.$breakpoint-md) {
         width: 20px;
@@ -145,6 +149,7 @@
     border-radius: 16px;
     background: rgba(colors.color("dark", "dark-2"), 0.3);
     backdrop-filter: blur(10px);
+    overflow-y: auto;
 
     @media (max-width: breakpoints.$breakpoint-md) {
       padding: base.$padding-lg;

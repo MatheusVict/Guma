@@ -73,27 +73,26 @@ p {
     color: colors.color("neutral", "gray-light");
     margin-bottom: base.$margin-xs;
   }
+}
 
+.text-muted {
+  color: colors.color("neutral", "gray-light");
+}
 
-  &.text-muted {
-    color: colors.color("neutral", "gray-light");
-  }
+.text-accent {
+  color: colors.color("orange", "primary");
+}
 
-  &.text-accent {
-    color: colors.color("orange", "primary");
-  }
+.text-warning {
+  color: colors.color("yellow", "primary");
+}
 
-  &.text-warning {
-    color: colors.color("yellow", "primary");
-  }
+.text-success {
+  color: colors.color("green", "medium-2");
+}
 
-  &.text-success {
-    color: colors.color("green", "medium-2");
-  }
-
-  &.text-error {
-    color: colors.color("red", "primary");
-  }
+.text-error {
+  color: colors.color("red", "primary");
 }
 
 
