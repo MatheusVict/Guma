@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, onUnmounted, ref } from 'vue'
-import HamburgerMenu from '@/components/HamburgerMenu.vue'
+import HamburgerMenu from '@/views/Home/components/HamburgerMenu.vue'
 
 import maraya from '../../public/maraya.png'
 import mrpunk from '../../public/mrpunkk.png'

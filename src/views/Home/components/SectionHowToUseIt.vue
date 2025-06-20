@@ -1,7 +1,7 @@
 <template>
-  <section class="how-to-use-it">
+  <section class="how-to-use-it" id="how-to-use-it">
     <header>
-      <h2>How to <span>use</span> it?</h2>
+      <h2>How to <span class="text-accent">use</span> it?</h2>
     </header>
 
     <div class="wrapper">

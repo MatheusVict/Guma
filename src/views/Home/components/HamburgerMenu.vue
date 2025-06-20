@@ -23,7 +23,7 @@
     >
       <ul class="menu-list">
         <li class="menu-item">
-          <router-link to="/" @click="closeMenu" class="menu-link">
+          <router-link to="#hero" @click="closeMenu" class="menu-link">
             Home
           </router-link>
         </li>
@@ -124,5 +124,5 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
-@import "../assets/styles/components/hamburger-menu/index";
+@import "../../../assets/styles/components/hamburger-menu/index";
 </style>

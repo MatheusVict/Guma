@@ -6,9 +6,9 @@ import {WHY_DO_YOU_NEED} from "@/store/whyDoYouNeed.js";
 
 <template>
 
-  <section class="why-do-you-need">
+  <section class="why-do-you-need" id="why-do-you-need">
     <header>
-      <h2>Why do you <span>need</span> to use Guma Agent?</h2>
+      <h2>Why do you <span class="text-accent">need</span> to use Guma Agent?</h2>
     </header>
 
     <div class="boxes">

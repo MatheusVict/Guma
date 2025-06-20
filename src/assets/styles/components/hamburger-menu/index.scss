@@ -64,7 +64,7 @@
 
     .hamburger-line {
       &:nth-child(1) {
-        transform: rotate(45deg) translate(6px, 6px);
+        transform: rotate(44deg) translate(4px, 5px);
 
         @media (max-width: breakpoints.$breakpoint-sm) {
           transform: rotate(45deg) translate(5px, 5px);
@@ -79,7 +79,7 @@
         transform: rotate(-45deg) translate(6px, -6px);
 
         @media (max-width: breakpoints.$breakpoint-sm) {
-          transform: rotate(-45deg) translate(5px, -5px);
+          transform: rotate(318deg) translate(3px, -4px);
         }
       }
     }

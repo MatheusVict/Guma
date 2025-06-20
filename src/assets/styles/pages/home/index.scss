@@ -6,39 +6,36 @@
 
 main {
   background-color: colors.color("dark", "dark-2");
-  @include flex.flex-column(flex-start, center, no-wrap, base.$size-xxxxl);
+  @include flex.flex-column(center, center, no-wrap, base.$size-xxxxl);
   color: colors.color("neutral", "white-off");
   width: 100%;
   min-height: 100vh;
-  padding: 0 base.$padding-lg;
+
+  .wrapper {
+    padding: base.$padding-md;
+    width: base.$size-100-percent;
+    @include flex.flex-column(center, center);
+  }
 
   @media (max-width: breakpoints.$breakpoint-lg) {
-    padding: 0 base.$padding-md;
     gap: base.$size-xxxl;
   }
 
+  // Ensure sections don't overflow
   @media (max-width: breakpoints.$breakpoint-md) {
-    padding: 0 base.$padding-sm;
     gap: base.$size-xxl;
   }
 
   @media (max-width: breakpoints.$breakpoint-sm) {
-    padding: 0 base.$padding-xs;
     gap: base.$size-xl;
   }
 
   @media (max-width: breakpoints.$breakpoint-xs) {
-    padding: 0 8px;
-    gap: base.$size-lg;
+    gap: base.$size-xxxl;
   }
 
   // Ensure sections don't overflow
   section {
     width: 100%;
-    max-width: 1200px;
-
-    @media (max-width: breakpoints.$breakpoint-xl) {
-      max-width: 100%;
-    }
   }
 }

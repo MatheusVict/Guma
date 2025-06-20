@@ -3,59 +3,74 @@
 @use "../../variables/typography" as typography;
 @use "../../variables/breakpoints" as breakpoints;
 
-.button-primary {
-  display: inline-block;
+// Base button styles
+%button-base {
   padding: base.$padding-md base.$padding-xl;
-  border: 2px solid colors.color("orange", "primary");
-  border-radius: base.$border-radius-lg;
+
+  border: 2px solid;
   background: transparent;
-  color: colors.color("neutral", "white");
-  font-family: typography.$font-secondary;
-  font-weight: map-get(typography.$font-weights, 'semi-bold');
-  font-size: map-get(typography.$font-sizes, 'base');
-  cursor: pointer;
+  border-radius: base.$border-radius-lg;
+  border-bottom: base.$border-primary-accent;
+
   text-align: center;
   text-decoration: none;
+  font-family: typography.$font-secondary;
+  color: colors.color("neutral", "white-off");
+  font-size: map-get(typography.$font-sizes, 'base');
+  font-weight: map-get(typography.$font-weights, 'bold');
+  letter-spacing: map-get(typography.$letter-spacing, 'widest');
+
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  text-transform: uppercase;
+  backdrop-filter: blur(5px);
   transition: all 0.3s ease-in-out;
 
   // Mobile responsive adjustments
   @media (max-width: breakpoints.$breakpoint-md) {
     padding: base.$padding-sm base.$padding-lg;
-    font-size: map-get(typography.$font-sizes, 'sm');
+    font-size: map-get(typography.$font-sizes, 'lg');
   }
 
   @media (max-width: breakpoints.$breakpoint-sm) {
     padding: base.$padding-xs base.$padding-md;
-    font-size: map-get(typography.$font-sizes, 'xs');
+    font-size: map-get(typography.$font-sizes, 'base');
     width: 100%;
     max-width: 280px;
   }
 
   @media (max-width: breakpoints.$breakpoint-xs) {
     padding: 10px 16px;
-    font-size: 14px;
-    border-radius: base.$border-radius-md;
-  }
-
-  &:hover {
-    background-color: rgba(colors.color("orange", "primary"), 0.1);
-    box-shadow: 0 0 8px colors.color("orange", "primary");
-    transform: translateY(-2px);
-
-    // Disable hover transform on touch devices
-    @media (hover: none) {
-      transform: none;
-    }
+    font-size: map-get(typography.$font-sizes, 'sm');
   }
 
   &:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(colors.color("orange", "primary"), 0.3);
+  }
+
+  // Disable hover transform on touch devices
+  @media (hover: none) {
+    &:hover {
+      transform: none;
+    }
+  }
+}
+
+// Primary button (orange)
+.button-primary {
+  @extend %button-base;
+  border-color: colors.color("orange", "primary");
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: colors.color("orange", "dark-6");
+    background-color: colors.color("orange", "dark-3");
   }
 
   &:active {
     transform: translateY(0);
-    box-shadow: none;
-    background-color: rgba(colors.color("orange", "primary"), 0.2);
+    background-color: colors.color("orange", "dark-4");
+    border-color: colors.color("orange", "dark-5");
   }
 }

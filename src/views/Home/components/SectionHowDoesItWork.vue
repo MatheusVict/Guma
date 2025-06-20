@@ -4,17 +4,13 @@ import Image1 from "@/assets/img/homeSections/two-serious-business-cats-in-suits
 
 
 <template>
-  <section class="how-does-it-work">
-    <aside>
-      <h2>How does it work?</h2>
-
-      <img :src="Image1" alt="two serious business cats in suits">
-    </aside>
+  <section class="how-does-it-work" id="how-does-it-work">
+    <header>
+      <h2>How <strong class="text-accent">does</strong> it work?</h2>
+    </header>
 
     <article>
-      <div class="cover">
-      </div>
-
+      <img :src="Image1" alt="two serious business cats in suits">
       <video poster="../../../assets/img/homeSections/poster-video.svg">
         <source src="">
       </video>

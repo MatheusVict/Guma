@@ -35,11 +35,9 @@ const goToAbout = () => {
   padding: 0;
   border-radius: 50%;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);
 
   &:hover {
     transform: scale(1.1);
-    box-shadow: 0 6px 25px rgba(79, 70, 229, 0.5);
   }
 
   &:active {

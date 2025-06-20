@@ -5,6 +5,7 @@
 @use "../../mixins/flex" as flex;
 
 .about-page {
+  background-color: colors.color("dark", "dark-2");
   min-height: 100vh;
   width: 100%;
   position: relative;

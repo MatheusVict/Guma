@@ -18,5 +18,5 @@ const props = defineProps({
 </template>
 
 <style scoped lang="scss">
-@import "../../assets/styles/components/buttons/buttons";
+@use "../../assets/styles/components/buttons/buttons";
 </style>
