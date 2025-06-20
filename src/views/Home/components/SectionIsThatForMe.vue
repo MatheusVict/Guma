@@ -1,5 +1,5 @@
 <template>
-  <section class="is-that-for-me">
+  <section class="is-that-for-me" id="is-that-for-me">
     <header>
       <h2>Is that for <span class="text-accent">me</span>?</h2>
     </header>

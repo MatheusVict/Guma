@@ -4,7 +4,7 @@ import Image1 from "@/assets/img/homeSections/two-serious-business-cats-in-suits
 
 
 <template>
-  <section class="how-does-it-work">
+  <section class="how-does-it-work" id="how-does-it-work">
     <header>
       <h2>How <strong class="text-accent">does</strong> it work?</h2>
     </header>

@@ -3,7 +3,7 @@ import ButtonPrimary from "../components/buttons/ButtonPrimary.vue";
 </script>
 
 <template>
-  <div class="hero">
+  <div class="hero" id="hero">
     <div class="hero-image">
       <img src="../assets/img/guma.svg" alt="Guma Agent"/>
     </div>

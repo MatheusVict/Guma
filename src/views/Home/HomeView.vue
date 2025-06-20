@@ -7,7 +7,7 @@ import SectionHowDoesItWork from "@/views/Home/components/SectionHowDoesItWork.v
 import SectionHowToUseIt from "@/views/Home/components/SectionHowToUseIt.vue";
 import SectionIsThatForMe from "@/views/Home/components/SectionIsThatForMe.vue";
 import Footer from "@/components/Footer.vue";
-import HamburgerMenu from "@/components/HamburgerMenu.vue";
+import HamburgerMenu from "@/views/Home/components/HamburgerMenu.vue";
 import FixedButton from "@/components/buttons/FixedButton.vue";
 </script>
 
