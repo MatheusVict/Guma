@@ -12,9 +12,6 @@ import Image1 from "@/assets/img/homeSections/two-serious-business-cats-in-suits
     </aside>
 
     <article>
-      <div class="cover">
-      </div>
-
       <video poster="../../../assets/img/homeSections/poster-video.svg">
         <source src="">
       </video>
