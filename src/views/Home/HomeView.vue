@@ -1,5 +1,4 @@
 <script setup>
-import { useRouter } from 'vue-router'
 import Hero from '../../components/Hero.vue'
 import Separator from "@/components/Separator.vue";
 import SectionWhyDoYouNeed from "@/views/Home/components/SectionWhyDoYouNeed.vue";

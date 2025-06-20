@@ -15,6 +15,8 @@ import {
 } from 'lucide-vue-next'
 import SelectInput from '../../components/SelectInput.vue'
 import ButtonPrimary from '../../components/buttons/ButtonPrimary.vue'
+import { useRouter } from 'vue-router'
+
 
 interface SelectOption {
   value: string | number
@@ -104,6 +106,11 @@ const fileUploads = ref<FileUpload[]>([
   { id: '1', file: null, name: '' }
 ])
 
+// AI Response state
+const showAIResponse = ref<boolean>(false)
+const aiResponse = ref<string>('')
+const isLoadingAI = ref<boolean>(false)
+
 // Computed properties for current step
 const currentStepConfig = computed(() => {
   switch (currentStep.value) {
@@ -186,7 +193,7 @@ watch(firstSelectValue, () => {
 })
 
 // Methods
-const handleNext = () => {
+const handleNext = async () => {
   if (!canProceed.value) return
 
   // Save current step data
@@ -213,13 +220,18 @@ const handleNext = () => {
 
   completedSteps.value.push(stepData)
 
+  // If completing step 3, make API call and show AI response
+  if (currentStep.value === 3) {
+    await makeCompletionAPICall()
+  }
+
   // Move to next step
   currentStep.value++
 
   // Reset selections for next step
   firstSelectValue.value = null
   secondSelectValue.value = null
-  
+
   // Reset file uploads for next time
   if (currentStep.value > 3) {
     fileUploads.value = [{ id: '1', file: null, name: '' }]
@@ -243,12 +255,12 @@ const resetProcess = () => {
 const handleFileChange = (uploadId: string, event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0] || null
-  
+
   const uploadIndex = fileUploads.value.findIndex(upload => upload.id === uploadId)
   if (uploadIndex !== -1) {
     fileUploads.value[uploadIndex].file = file
     fileUploads.value[uploadIndex].name = file?.name || ''
-    
+
     // If this is the last upload and a file was selected, add a new empty upload
     if (uploadIndex === fileUploads.value.length - 1 && file) {
       addFileUpload()
@@ -266,6 +278,111 @@ const removeFileUpload = (uploadId: string) => {
     fileUploads.value = fileUploads.value.filter(upload => upload.id !== uploadId)
   }
 }
+
+// AI Response functions
+const toggleAIResponse = () => {
+  showAIResponse.value = !showAIResponse.value
+  if (showAIResponse.value && !aiResponse.value) {
+    generateAIResponse()
+  }
+}
+
+const generateAIResponse = async () => {
+  isLoadingAI.value = true
+  aiResponse.value = ''
+  
+  // Simulate API call delay
+  await new Promise(resolve => setTimeout(resolve, 2000))
+  
+  // Fake AI response based on current data
+  const currentData = getCurrentFormData()
+  aiResponse.value = generateFakeAIResponse(currentData)
+  
+  isLoadingAI.value = false
+}
+
+const getCurrentFormData = () => {
+  return {
+    currentStep: currentStep.value,
+    completedSteps: completedSteps.value,
+    currentSelections: {
+      first: firstSelectValue.value,
+      second: secondSelectValue.value
+    },
+    files: fileUploads.value.filter(upload => upload.file !== null)
+  }
+}
+
+const generateFakeAIResponse = (data: any) => {
+  const responses = [
+    `Based on your selections, I can see you're working with ${data.completedSteps.length > 0 ? data.completedSteps[0]?.firstSelect?.label || 'your chosen discipline' : 'your academic setup'}. This is an excellent choice for developing comprehensive educational materials.
+
+Here are some suggestions for your next steps:
+• Consider creating interactive exercises that align with your chosen teaching style
+• Develop assessment rubrics that match your academic standards
+• Create multimedia content to enhance student engagement`,
+    
+    `I notice you're currently on step ${data.currentStep}. The configuration you've chosen so far shows a well-structured approach to academic content creation.
+
+Recommendations:
+• Your discipline selection provides a solid foundation for targeted content
+• The professor style you've chosen will help personalize the learning experience
+• Consider adding supplementary materials to enhance comprehension`,
+    
+    `Your uploaded files ${data.files.length > 0 ? `(${data.files.length} file${data.files.length > 1 ? 's' : ''})` : ''} will be processed to create personalized educational content that matches your teaching style and academic requirements.
+
+Next steps:
+• I'll analyze your content to identify key learning objectives
+• Create customized exercises based on your materials
+• Generate assessment tools aligned with your rubric preferences`,
+  ]
+  
+  return responses[Math.floor(Math.random() * responses.length)]
+}
+
+const makeCompletionAPICall = async () => {
+  isLoadingAI.value = true
+  showAIResponse.value = true
+  
+  // Simulate API call with all collected data
+  const allData = {
+    completedSteps: completedSteps.value,
+    totalSteps: 3,
+    timestamp: new Date().toISOString()
+  }
+  
+  console.log('Making API call with data:', allData)
+  
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 3000))
+  
+  // Generate completion response
+  aiResponse.value = `🎉 Excellent! Your Guma Agent setup is now complete and I've processed all your information.
+
+Based on your configuration:
+${completedSteps.value.map((step, index) => 
+  `• Step ${step.step}: ${step.firstSelect.label} → ${step.secondSelect.label}`
+).join('\n')}
+
+I'm now ready to help you create amazing educational content! Here's what I can do for you:
+
+📚 **Content Generation**: Create lesson plans, exercises, and study materials tailored to your discipline and teaching style.
+
+📝 **Assessment Tools**: Generate quizzes, assignments, and rubrics that align with your academic standards.
+
+🎯 **Personalized Learning**: Adapt content difficulty and presentation style based on your professor preferences.
+
+📊 **Progress Tracking**: Monitor student engagement and learning outcomes with detailed analytics.
+
+Your educational content creation journey starts now! I'll use all the information you've provided to deliver the most relevant and effective materials for your students.`
+  
+  isLoadingAI.value = false
+}
+
+const router = useRouter();
+const goToHome = () => {
+  router.push('/')
+}
 </script>
 
 <template>
@@ -279,10 +396,10 @@ const removeFileUpload = (uploadId: string) => {
         <button class="sidebar-btn" :class="{ active: currentStep === 1 }">
           <Settings class="icon" />
         </button>
-        <button class="sidebar-btn">
+        <button class="sidebar-btn" :class="{ active: showAIResponse }" @click="toggleAIResponse">
           <Menu class="icon" />
         </button>
-        <button class="sidebar-btn">
+        <button class="sidebar-btn" @click="goToHome">
           <Home class="icon" />
         </button>
       </div>
@@ -372,9 +489,9 @@ const removeFileUpload = (uploadId: string) => {
 
           <!-- File Upload Section for Step 3 -->
           <div v-else class="file-upload-container">
-            <div 
-              v-for="upload in fileUploads" 
-              :key="upload.id" 
+            <div
+              v-for="upload in fileUploads"
+              :key="upload.id"
               class="file-upload-card"
               :class="{ 'has-file': upload.file }"
             >
@@ -386,7 +503,7 @@ const removeFileUpload = (uploadId: string) => {
                   <span class="file-card-label">
                     {{ upload.file ? upload.name : 'Choose file...' }}
                   </span>
-                  <button 
+                  <button
                     v-if="fileUploads.length > 1 && !upload.file"
                     @click="removeFileUpload(upload.id)"
                     class="remove-btn"
@@ -403,8 +520,8 @@ const removeFileUpload = (uploadId: string) => {
                     class="file-input"
                     accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
                   />
-                  <label 
-                    :for="`file-${upload.id}`" 
+                  <label
+                    :for="`file-${upload.id}`"
                     class="file-input-label"
                   >
                     <Upload class="icon" />
@@ -413,9 +530,9 @@ const removeFileUpload = (uploadId: string) => {
                 </div>
               </div>
             </div>
-            
+
             <!-- Add more files button -->
-            <button 
+            <button
               @click="addFileUpload"
               class="add-file-btn"
               type="button"
@@ -479,6 +596,27 @@ const removeFileUpload = (uploadId: string) => {
           <div v-for="step in completedSteps" :key="step.step" class="previous-step">
             <span class="step-number">Step {{ step.step }}:</span>
             <span class="selection">{{ step.firstSelect.label }} → {{ step.secondSelect.label }}</span>
+          </div>
+        </div>
+
+        <!-- AI Response Area -->
+        <div v-if="showAIResponse" class="ai-response-area">
+          <div class="ai-response-header">
+            <div class="ai-avatar">
+              <img src="../../assets/img/guma.svg" alt="Guma AI" class="ai-avatar-image" />
+            </div>
+            <h3>Guma AI Response</h3>
+          </div>
+          
+          <div class="ai-response-content">
+            <div v-if="isLoadingAI" class="loading-state">
+              <div class="loading-spinner"></div>
+              <p>Guma is analyzing your data and generating response...</p>
+            </div>
+            
+            <div v-else class="ai-text-area">
+              <pre>{{ aiResponse || 'Click the menu button to get AI insights about your current setup!' }}</pre>
+            </div>
           </div>
         </div>
       </div>
