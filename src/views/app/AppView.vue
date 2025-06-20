@@ -280,10 +280,17 @@ const removeFileUpload = (uploadId: string) => {
 }
 
 // AI Response functions
-const toggleAIResponse = () => {
+const toggleAIResponse = async () => {
+  // Only allow toggle if steps are completed
+  if (!isCompleted.value) return
+  
   showAIResponse.value = !showAIResponse.value
-  if (showAIResponse.value && !aiResponse.value) {
-    generateAIResponse()
+  if (showAIResponse.value) {
+    if (!aiResponse.value) {
+      await generateAIResponse()
+    }
+    // Scroll to AI response area when showing
+    await scrollToAIResponse()
   }
 }
 
@@ -377,6 +384,22 @@ I'm now ready to help you create amazing educational content! Here's what I can 
 Your educational content creation journey starts now! I'll use all the information you've provided to deliver the most relevant and effective materials for your students.`
   
   isLoadingAI.value = false
+  
+  // Smooth scroll to AI response area after response is ready
+  await scrollToAIResponse()
+}
+
+const scrollToAIResponse = async () => {
+  // Wait a bit for DOM to update
+  await new Promise(resolve => setTimeout(resolve, 100))
+  
+  const aiResponseElement = document.querySelector('.ai-response-area')
+  if (aiResponseElement) {
+    aiResponseElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    })
+  }
 }
 
 const router = useRouter();
@@ -396,7 +419,7 @@ const goToHome = () => {
         <button class="sidebar-btn" :class="{ active: currentStep === 1 }">
           <Settings class="icon" />
         </button>
-        <button class="sidebar-btn" :class="{ active: showAIResponse }" @click="toggleAIResponse">
+        <button class="sidebar-btn" :class="{ active: showAIResponse, disabled: !isCompleted }" @click="toggleAIResponse">
           <Menu class="icon" />
         </button>
         <button class="sidebar-btn" @click="goToHome">
@@ -600,7 +623,7 @@ const goToHome = () => {
         </div>
 
         <!-- AI Response Area -->
-        <div v-if="showAIResponse" class="ai-response-area">
+        <div v-if="showAIResponse && isCompleted" class="ai-response-area">
           <div class="ai-response-header">
             <div class="ai-avatar">
               <img src="../../assets/img/guma.svg" alt="Guma AI" class="ai-avatar-image" />

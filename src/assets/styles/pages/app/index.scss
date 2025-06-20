@@ -58,8 +58,17 @@
       border-color: colors.color("orange", "primary");
     }
 
-    &:hover {
+    &:hover:not(.disabled) {
       background: rgba(colors.color("neutral", "white-off"), 0.15);
+    }
+
+    &.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      
+      &:hover {
+        background: rgba(colors.color("neutral", "white-off"), 0.1);
+      }
     }
 
     .icon {
