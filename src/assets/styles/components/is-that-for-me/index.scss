@@ -4,7 +4,7 @@
 @use "../../variables/breakpoints" as breakpoints;
 @use "../../mixins/flex" as flex;
 
-.main-content {
+.is-that-for-me {
   padding: base.$padding-xxl 0;
   margin: base.$margin-xl 0;
   
@@ -65,49 +65,16 @@
     );
     color: colors.color("neutral", "white-off");
     padding: base.$padding-xl;
-    width: 300px;
-    max-width: 100%;
     border-radius: 20px;
     clip-path: polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%);
     border: 2px solid rgba(colors.color("neutral", "gray-dark"), 0.3);
     backdrop-filter: blur(10px);
     @include flex.flex-column(center, center, nowrap, base.$size-md);
-    
-    @media (max-width: breakpoints.$breakpoint-lg) {
-      clip-path: none;
-      border-radius: 16px;
-      width: 100%;
-      max-width: 400px;
-    }
-    
-    @media (max-width: breakpoints.$breakpoint-md) {
-      padding: base.$padding-lg;
-      border-radius: 12px;
-    }
-    
-    @media (max-width: breakpoints.$breakpoint-sm) {
-      padding: base.$padding-md;
-      border-radius: 8px;
-      max-width: 100%;
-    }
-    
+
     img {
-      max-width: 200px;
-      width: 100%;
+      max-width: 12rem;
       height: auto;
       filter: drop-shadow(0 8px 24px rgba(colors.color("orange", "primary"), 0.2));
-      
-      @media (max-width: breakpoints.$breakpoint-lg) {
-        max-width: 180px;
-      }
-      
-      @media (max-width: breakpoints.$breakpoint-md) {
-        max-width: 150px;
-      }
-      
-      @media (max-width: breakpoints.$breakpoint-sm) {
-        max-width: 120px;
-      }
     }
   }
   
@@ -116,16 +83,10 @@
       rgba(colors.color("dark", "dark-2"), 0.9), 
       rgba(colors.color("neutral", "gray-darkest"), 0.8)
     );
-    color: colors.color("neutral", "white-off");
     padding: base.$padding-xl;
-    width: 300px;
-    max-width: 100%;
     border-radius: 20px;
-    clip-path: polygon(0 0, 90% 0%, 100% 100%, 10% 100%);
     border: 2px solid rgba(colors.color("neutral", "gray-dark"), 0.3);
-    backdrop-filter: blur(10px);
-    min-width: 25vw;
-    
+
     @media (max-width: breakpoints.$breakpoint-lg) {
       clip-path: none;
       border-radius: 16px;
@@ -151,10 +112,6 @@
       color: colors.color("neutral", "gray-lighter");
       line-height: map-get(typography.$line-heights, 'relaxed');
       margin-bottom: base.$margin-md;
-      
-      &:last-child {
-        margin-bottom: 0;
-      }
       
       @media (max-width: breakpoints.$breakpoint-md) {
         font-size: map-get(typography.$font-sizes, 'sm');
