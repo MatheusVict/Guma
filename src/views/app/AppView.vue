@@ -8,7 +8,10 @@ import {
   Menu,
   Settings,
   Home,
-  CheckCircle
+  CheckCircle,
+  Upload,
+  X,
+  Plus
 } from 'lucide-vue-next'
 import SelectInput from '../../components/SelectInput.vue'
 import ButtonPrimary from '../../components/buttons/ButtonPrimary.vue'
@@ -16,6 +19,12 @@ import ButtonPrimary from '../../components/buttons/ButtonPrimary.vue'
 interface SelectOption {
   value: string | number
   label: string
+}
+
+interface FileUpload {
+  id: string
+  file: File | null
+  name: string
 }
 
 interface StepData {
@@ -30,6 +39,7 @@ interface StepData {
     label: string
     options: SelectOption[]
   }
+  files?: FileUpload[]
 }
 
 // Sample data - you can replace this with your actual data
@@ -89,6 +99,11 @@ const completedSteps = ref<StepData[]>([])
 const firstSelectValue = ref<string | number | null>(null)
 const secondSelectValue = ref<string | number | null>(null)
 
+// File uploads for step 3
+const fileUploads = ref<FileUpload[]>([
+  { id: '1', file: null, name: '' }
+])
+
 // Computed properties for current step
 const currentStepConfig = computed(() => {
   switch (currentStep.value) {
@@ -128,19 +143,19 @@ const currentStepConfig = computed(() => {
       }
     case 3:
       return {
-        title: 'Final Assignment and Rubric',
-        description: 'Complete your setup with the final assignment and rubric selection.',
+        title: 'Upload Files',
+        description: 'Upload your documents and files to complete the setup.',
         firstSelect: {
-          label: 'Final Assignment',
-          options: assignments.filter(a => a.value !== completedSteps.value[1]?.firstSelect.value),
-          placeholder: 'Choose final assignment...',
-          icon: BookOpen
+          label: '',
+          options: [],
+          placeholder: '',
+          icon: Upload
         },
         secondSelect: {
-          label: 'Final Rubric',
-          options: rubrics.filter(r => r.value !== completedSteps.value[1]?.secondSelect.value),
-          placeholder: 'Choose final rubric...',
-          icon: GraduationCap
+          label: '',
+          options: [],
+          placeholder: '',
+          icon: Upload
         }
       }
     default:
@@ -154,6 +169,10 @@ const currentStepConfig = computed(() => {
 })
 
 const canProceed = computed(() => {
+  if (currentStep.value === 3) {
+    // For step 3, check if at least one file is uploaded
+    return fileUploads.value.some(upload => upload.file !== null)
+  }
   return firstSelectValue.value !== null && secondSelectValue.value !== null
 })
 
@@ -185,6 +204,13 @@ const handleNext = () => {
     }
   }
 
+  // For step 3, save file uploads instead of select values
+  if (currentStep.value === 3) {
+    stepData.files = [...fileUploads.value.filter(upload => upload.file !== null)]
+    stepData.firstSelect = { value: 'files', label: 'Files Uploaded', options: [] }
+    stepData.secondSelect = { value: 'files', label: `${stepData.files.length} file(s)`, options: [] }
+  }
+
   completedSteps.value.push(stepData)
 
   // Move to next step
@@ -193,6 +219,11 @@ const handleNext = () => {
   // Reset selections for next step
   firstSelectValue.value = null
   secondSelectValue.value = null
+  
+  // Reset file uploads for next time
+  if (currentStep.value > 3) {
+    fileUploads.value = [{ id: '1', file: null, name: '' }]
+  }
 }
 
 const getOptionLabel = (options: SelectOption[], value: string | number): string => {
@@ -205,6 +236,35 @@ const resetProcess = () => {
   completedSteps.value = []
   firstSelectValue.value = null
   secondSelectValue.value = null
+  fileUploads.value = [{ id: '1', file: null, name: '' }]
+}
+
+// File upload methods
+const handleFileChange = (uploadId: string, event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0] || null
+  
+  const uploadIndex = fileUploads.value.findIndex(upload => upload.id === uploadId)
+  if (uploadIndex !== -1) {
+    fileUploads.value[uploadIndex].file = file
+    fileUploads.value[uploadIndex].name = file?.name || ''
+    
+    // If this is the last upload and a file was selected, add a new empty upload
+    if (uploadIndex === fileUploads.value.length - 1 && file) {
+      addFileUpload()
+    }
+  }
+}
+
+const addFileUpload = () => {
+  const newId = (fileUploads.value.length + 1).toString()
+  fileUploads.value.push({ id: newId, file: null, name: '' })
+}
+
+const removeFileUpload = (uploadId: string) => {
+  if (fileUploads.value.length > 1) {
+    fileUploads.value = fileUploads.value.filter(upload => upload.id !== uploadId)
+  }
 }
 </script>
 
@@ -268,8 +328,8 @@ const resetProcess = () => {
             {{ currentStepConfig.description }}
           </p>
 
-          <!-- Cards Section -->
-          <div class="cards-container">
+          <!-- Cards Section for Steps 1 & 2 -->
+          <div v-if="currentStep !== 3" class="cards-container">
             <div class="card" :class="{ 'selected': firstSelectValue }">
               <div class="card-icon">
                 <component :is="currentStepConfig.firstSelect.icon" class="icon" />
@@ -310,6 +370,61 @@ const resetProcess = () => {
             </div>
           </div>
 
+          <!-- File Upload Section for Step 3 -->
+          <div v-else class="file-upload-container">
+            <div 
+              v-for="upload in fileUploads" 
+              :key="upload.id" 
+              class="file-upload-card"
+              :class="{ 'has-file': upload.file }"
+            >
+              <div class="file-card-icon">
+                <Upload class="icon" />
+              </div>
+              <div class="file-card-content">
+                <div class="file-card-header">
+                  <span class="file-card-label">
+                    {{ upload.file ? upload.name : 'Choose file...' }}
+                  </span>
+                  <button 
+                    v-if="fileUploads.length > 1 && !upload.file"
+                    @click="removeFileUpload(upload.id)"
+                    class="remove-btn"
+                    type="button"
+                  >
+                    <X class="icon" />
+                  </button>
+                </div>
+                <div class="file-input-container">
+                  <input
+                    type="file"
+                    :id="`file-${upload.id}`"
+                    @change="handleFileChange(upload.id, $event)"
+                    class="file-input"
+                    accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                  />
+                  <label 
+                    :for="`file-${upload.id}`" 
+                    class="file-input-label"
+                  >
+                    <Upload class="icon" />
+                    {{ upload.file ? 'Change file' : 'Select file' }}
+                  </label>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Add more files button -->
+            <button 
+              @click="addFileUpload"
+              class="add-file-btn"
+              type="button"
+            >
+              <Plus class="icon" />
+              Add another file
+            </button>
+          </div>
+
           <!-- Next Button -->
           <div class="button-container">
             <ButtonPrimary
@@ -334,8 +449,18 @@ const resetProcess = () => {
             <div v-for="step in completedSteps" :key="step.step" class="summary-step">
               <h3>Step {{ step.step }}</h3>
               <div class="summary-content">
-                <p><strong>{{ step.firstSelect.label }}</strong></p>
-                <p><strong>{{ step.secondSelect.label }}</strong></p>
+                <div v-if="step.files && step.files.length > 0">
+                  <p><strong>Files Uploaded:</strong></p>
+                  <ul class="file-list">
+                    <li v-for="file in step.files" :key="file.id">
+                      {{ file.name }}
+                    </li>
+                  </ul>
+                </div>
+                <div v-else>
+                  <p><strong>{{ step.firstSelect.label }}</strong></p>
+                  <p><strong>{{ step.secondSelect.label }}</strong></p>
+                </div>
               </div>
             </div>
           </div>

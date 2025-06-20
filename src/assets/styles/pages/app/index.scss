@@ -494,3 +494,185 @@
     }
   }
 }
+
+// File Upload Styles
+.file-upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: base.$margin-lg;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto base.$margin-xxl auto;
+
+  @media (max-width: breakpoints.$breakpoint-md) {
+    max-width: 500px;
+  }
+}
+
+.file-upload-card {
+  background: rgba(colors.color("neutral", "white-off"), 0.05);
+  border: 2px dashed rgba(colors.color("neutral", "white-off"), 0.2);
+  border-radius: base.$border-radius-lg;
+  padding: base.$padding-xl;
+  display: flex;
+  flex-direction: column;
+  gap: base.$margin-lg;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: rgba(colors.color("orange", "primary"), 0.4);
+    background: rgba(colors.color("neutral", "white-off"), 0.08);
+  }
+
+  &.has-file {
+    border-style: solid;
+    border-color: colors.color("orange", "primary");
+    background: rgba(colors.color("orange", "primary"), 0.1);
+  }
+
+  .file-card-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(colors.color("orange", "primary"), 0.2);
+    border-radius: base.$border-radius-md;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+
+    .icon {
+      width: 24px;
+      height: 24px;
+      color: colors.color("orange", "primary");
+    }
+  }
+
+  .file-card-content {
+    flex: 1;
+  }
+
+  .file-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: base.$margin-md;
+  }
+
+  .file-card-label {
+    font-family: typography.$font-secondary;
+    font-size: map-get(typography.$font-sizes, 'base');
+    font-weight: map-get(typography.$font-weights, 'semi-bold');
+    color: colors.color("neutral", "white-off");
+    text-align: center;
+    flex: 1;
+  }
+
+  .remove-btn {
+    width: 24px;
+    height: 24px;
+    background: rgba(colors.color("red", "primary"), 0.2);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: rgba(colors.color("red", "primary"), 0.3);
+    }
+
+    .icon {
+      width: 14px;
+      height: 14px;
+      color: colors.color("red", "primary");
+    }
+  }
+
+  .file-input-container {
+    position: relative;
+  }
+
+  .file-input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+  }
+
+  .file-input-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: base.$margin-sm;
+    padding: base.$padding-md base.$padding-lg;
+    background: rgba(colors.color("orange", "primary"), 0.1);
+    border: 1px solid colors.color("orange", "primary");
+    border-radius: base.$border-radius-md;
+    color: colors.color("orange", "primary");
+    font-family: typography.$font-secondary;
+    font-size: map-get(typography.$font-sizes, 'sm');
+    font-weight: map-get(typography.$font-weights, 'semi-bold');
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: rgba(colors.color("orange", "primary"), 0.2);
+    }
+
+    .icon {
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+.add-file-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: base.$margin-sm;
+  padding: base.$padding-md base.$padding-lg;
+  background: transparent;
+  border: 2px dashed rgba(colors.color("orange", "primary"), 0.5);
+  border-radius: base.$border-radius-md;
+  color: colors.color("orange", "primary");
+  font-family: typography.$font-secondary;
+  font-size: map-get(typography.$font-sizes, 'sm');
+  font-weight: map-get(typography.$font-weights, 'semi-bold');
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: colors.color("orange", "primary");
+    background: rgba(colors.color("orange", "primary"), 0.1);
+  }
+
+  .icon {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+// File list in summary
+.file-list {
+  list-style: none;
+  padding: 0;
+  margin: base.$margin-sm 0 0 0;
+
+  li {
+    padding: base.$padding-xs base.$padding-sm;
+    background: rgba(colors.color("orange", "primary"), 0.1);
+    border-radius: base.$border-radius-sm;
+    margin-bottom: base.$margin-xs;
+    font-size: map-get(typography.$font-sizes, 'sm');
+    color: colors.color("neutral", "white-off");
+    border-left: 3px solid colors.color("orange", "primary");
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
