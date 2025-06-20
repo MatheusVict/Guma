@@ -7,6 +7,7 @@
 .is-that-for-me {
   padding: base.$padding-xxl 0;
   margin: base.$margin-xl 0;
+  @include flex.flex-column();
   
   @media (max-width: breakpoints.$breakpoint-md) {
     padding: base.$padding-xl 0;
@@ -42,6 +43,7 @@
 .content {
   @include flex.flex-row(center, center, nowrap, 3rem);
   margin-top: 5rem;
+  width: 70%;
   
   @media (max-width: breakpoints.$breakpoint-lg) {
     @include flex.flex-column(center, center, nowrap, 2rem);
