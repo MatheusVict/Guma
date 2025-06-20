@@ -27,6 +27,18 @@
   border-color: colors.color("orange");
 }
 
+::selection {
+  background-color: colors.color("orange", "primary");
+  color: colors.color("neutral", "white-off");
+  text-shadow: none;
+}
+
+::-moz-selection {
+  background-color: colors.color("orange", "primary");
+  color: colors.color("neutral", "white-off");
+  text-shadow: none;
+}
+
 html {
   scroll-behavior: smooth;
 }
