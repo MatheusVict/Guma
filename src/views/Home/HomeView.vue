@@ -18,33 +18,23 @@ import FixedButton from "@/components/buttons/FixedButton.vue";
 
       <FixedButton/>
 
-      <section id="hero">
-        <Hero/>
-      </section>
+      <Hero/>
 
       <Separator/>
 
-      <section id="why-do-you-need">
-        <SectionWhyDoYouNeed/>
-      </section>
+      <SectionWhyDoYouNeed/>
 
       <Separator/>
 
-      <section id="how-does-it-work">
-        <SectionHowDoesItWork/>
-      </section>
+      <SectionHowDoesItWork/>
 
       <Separator/>
 
-      <section id="how-to-use-it">
-        <SectionHowToUseIt/>
-      </section>
+      <SectionHowToUseIt/>
 
       <Separator/>
 
-      <section id="is-that-for-me">
-        <SectionIsThatForMe/>
-      </section>
+      <SectionIsThatForMe/>
 
     </div>
     <Footer/>

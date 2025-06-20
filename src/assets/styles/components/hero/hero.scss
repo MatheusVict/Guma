@@ -7,7 +7,7 @@
 .hero {
   @include flex.flex-row(center, center, nowrap, base.$size-xl);
   min-height: 25vh;
-  padding: base.$padding-xxl base.$padding-lg;
+  padding: base.$padding-xxl base.$padding-xxl;
   margin-top: base.$margin-lg;
   position: relative;
   z-index: 1;
