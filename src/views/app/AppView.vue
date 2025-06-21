@@ -16,7 +16,10 @@ import {
 import SelectInput from '../../components/SelectInput.vue'
 import ButtonPrimary from '../../components/buttons/ButtonPrimary.vue'
 import { useRouter } from 'vue-router'
+import * as pdfjsLib from 'pdfjs-dist'
 
+// Set up PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.3.31/pdf.min.mjs`
 
 interface SelectOption {
   value: string | number
@@ -27,6 +30,9 @@ interface FileUpload {
   id: string
   file: File | null
   name: string
+  extractedText?: string
+  isExtracting?: boolean
+  extractionError?: string
 }
 
 interface StepData {
@@ -103,7 +109,7 @@ const secondSelectValue = ref<string | number | null>(null)
 
 // File uploads for step 3
 const fileUploads = ref<FileUpload[]>([
-  { id: '1', file: null, name: '' }
+  { id: '1', file: null, name: '', extractedText: '', isExtracting: false, extractionError: '' }
 ])
 
 // AI Response state
@@ -150,8 +156,8 @@ const currentStepConfig = computed(() => {
       }
     case 3:
       return {
-        title: 'Upload Files',
-        description: 'Upload your documents and files to complete the setup.',
+        title: 'Upload PDF Files',
+        description: 'Upload your PDF documents to extract text and complete the setup.',
         firstSelect: {
           label: '',
           options: [],
@@ -177,8 +183,14 @@ const currentStepConfig = computed(() => {
 
 const canProceed = computed(() => {
   if (currentStep.value === 3) {
-    // For step 3, check if at least one file is uploaded
-    return fileUploads.value.some(upload => upload.file !== null)
+    // For step 3, check if at least one PDF file is uploaded and text is extracted successfully
+    return fileUploads.value.some(upload =>
+      upload.file !== null &&
+      upload.extractedText &&
+      upload.extractedText.length > 0 &&
+      !upload.isExtracting &&
+      !upload.extractionError
+    )
   }
   return firstSelectValue.value !== null && secondSelectValue.value !== null
 })
@@ -234,7 +246,7 @@ const handleNext = async () => {
 
   // Reset file uploads for next time
   if (currentStep.value > 3) {
-    fileUploads.value = [{ id: '1', file: null, name: '' }]
+    fileUploads.value = [{ id: '1', file: null, name: '', extractedText: '', isExtracting: false, extractionError: '' }]
   }
 }
 
@@ -248,18 +260,62 @@ const resetProcess = () => {
   completedSteps.value = []
   firstSelectValue.value = null
   secondSelectValue.value = null
-  fileUploads.value = [{ id: '1', file: null, name: '' }]
+  fileUploads.value = [{ id: '1', file: null, name: '', extractedText: '', isExtracting: false, extractionError: '' }]
+}
+
+// PDF text extraction function
+const extractTextFromPDF = async (file: File): Promise<string> => {
+  try {
+    const arrayBuffer = await file.arrayBuffer()
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+    let fullText = ''
+
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum)
+      const textContent = await page.getTextContent()
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ')
+      fullText += pageText + '\n'
+    }
+
+    return fullText.trim()
+  } catch (error) {
+    console.error('Error extracting text from PDF:', error)
+    throw new Error('Failed to extract text from PDF')
+  }
 }
 
 // File upload methods
-const handleFileChange = (uploadId: string, event: Event) => {
+const handleFileChange = async (uploadId: string, event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0] || null
 
   const uploadIndex = fileUploads.value.findIndex(upload => upload.id === uploadId)
   if (uploadIndex !== -1) {
+    // Reset previous state
     fileUploads.value[uploadIndex].file = file
     fileUploads.value[uploadIndex].name = file?.name || ''
+    fileUploads.value[uploadIndex].extractedText = ''
+    fileUploads.value[uploadIndex].isExtracting = false
+    fileUploads.value[uploadIndex].extractionError = ''
+
+    // If file is selected and it's a PDF, extract text
+    if (file && file.type === 'application/pdf') {
+      fileUploads.value[uploadIndex].isExtracting = true
+
+      try {
+        const extractedText = await extractTextFromPDF(file)
+        fileUploads.value[uploadIndex].extractedText = extractedText
+        fileUploads.value[uploadIndex].isExtracting = false
+
+        console.log(`Extracted text from ${file.name}:`, extractedText.substring(0, 200) + '...')
+      } catch (error) {
+        fileUploads.value[uploadIndex].isExtracting = false
+        fileUploads.value[uploadIndex].extractionError = 'Failed to extract text from PDF'
+        console.error('PDF text extraction failed:', error)
+      }
+    }
 
     // If this is the last upload and a file was selected, add a new empty upload
     if (uploadIndex === fileUploads.value.length - 1 && file) {
@@ -270,7 +326,14 @@ const handleFileChange = (uploadId: string, event: Event) => {
 
 const addFileUpload = () => {
   const newId = (fileUploads.value.length + 1).toString()
-  fileUploads.value.push({ id: newId, file: null, name: '' })
+  fileUploads.value.push({
+    id: newId,
+    file: null,
+    name: '',
+    extractedText: '',
+    isExtracting: false,
+    extractionError: ''
+  })
 }
 
 const removeFileUpload = (uploadId: string) => {
@@ -283,7 +346,7 @@ const removeFileUpload = (uploadId: string) => {
 const toggleAIResponse = async () => {
   // Only allow toggle if steps are completed
   if (!isCompleted.value) return
-  
+
   showAIResponse.value = !showAIResponse.value
   if (showAIResponse.value) {
     if (!aiResponse.value) {
@@ -297,14 +360,14 @@ const toggleAIResponse = async () => {
 const generateAIResponse = async () => {
   isLoadingAI.value = true
   aiResponse.value = ''
-  
+
   // Simulate API call delay
   await new Promise(resolve => setTimeout(resolve, 2000))
-  
+
   // Fake AI response based on current data
   const currentData = getCurrentFormData()
   aiResponse.value = generateFakeAIResponse(currentData)
-  
+
   isLoadingAI.value = false
 }
 
@@ -328,14 +391,14 @@ Here are some suggestions for your next steps:
 • Consider creating interactive exercises that align with your chosen teaching style
 • Develop assessment rubrics that match your academic standards
 • Create multimedia content to enhance student engagement`,
-    
+
     `I notice you're currently on step ${data.currentStep}. The configuration you've chosen so far shows a well-structured approach to academic content creation.
 
 Recommendations:
 • Your discipline selection provides a solid foundation for targeted content
 • The professor style you've chosen will help personalize the learning experience
 • Consider adding supplementary materials to enhance comprehension`,
-    
+
     `Your uploaded files ${data.files.length > 0 ? `(${data.files.length} file${data.files.length > 1 ? 's' : ''})` : ''} will be processed to create personalized educational content that matches your teaching style and academic requirements.
 
 Next steps:
@@ -343,31 +406,31 @@ Next steps:
 • Create customized exercises based on your materials
 • Generate assessment tools aligned with your rubric preferences`,
   ]
-  
+
   return responses[Math.floor(Math.random() * responses.length)]
 }
 
 const makeCompletionAPICall = async () => {
   isLoadingAI.value = true
   showAIResponse.value = true
-  
+
   // Simulate API call with all collected data
   const allData = {
     completedSteps: completedSteps.value,
     totalSteps: 3,
     timestamp: new Date().toISOString()
   }
-  
+
   console.log('Making API call with data:', allData)
-  
+
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 3000))
-  
+
   // Generate completion response
   aiResponse.value = `🎉 Excellent! Your Guma Agent setup is now complete and I've processed all your information.
 
 Based on your configuration:
-${completedSteps.value.map((step, index) => 
+${completedSteps.value.map((step, index) =>
   `• Step ${step.step}: ${step.firstSelect.label} → ${step.secondSelect.label}`
 ).join('\n')}
 
@@ -382,9 +445,9 @@ I'm now ready to help you create amazing educational content! Here's what I can 
 📊 **Progress Tracking**: Monitor student engagement and learning outcomes with detailed analytics.
 
 Your educational content creation journey starts now! I'll use all the information you've provided to deliver the most relevant and effective materials for your students.`
-  
+
   isLoadingAI.value = false
-  
+
   // Smooth scroll to AI response area after response is ready
   await scrollToAIResponse()
 }
@@ -392,7 +455,7 @@ Your educational content creation journey starts now! I'll use all the informati
 const scrollToAIResponse = async () => {
   // Wait a bit for DOM to update
   await new Promise(resolve => setTimeout(resolve, 100))
-  
+
   const aiResponseElement = document.querySelector('.ai-response-area')
   if (aiResponseElement) {
     aiResponseElement.scrollIntoView({
@@ -524,7 +587,7 @@ const goToHome = () => {
               <div class="file-card-content">
                 <div class="file-card-header">
                   <span class="file-card-label">
-                    {{ upload.file ? upload.name : 'Choose file...' }}
+                    {{ upload.file ? upload.name : 'Choose PDF file...' }}
                   </span>
                   <button
                     v-if="fileUploads.length > 1 && !upload.file"
@@ -535,20 +598,40 @@ const goToHome = () => {
                     <X class="icon" />
                   </button>
                 </div>
+
+                <!-- PDF extraction status -->
+                <div v-if="upload.file" class="extraction-status">
+                  <div v-if="upload.isExtracting" class="extraction-loading">
+                    <div class="loading-spinner"></div>
+                    <span>Extracting text from PDF...</span>
+                  </div>
+                  <div v-else-if="upload.extractionError" class="extraction-error">
+                    <span>❌ {{ upload.extractionError }}</span>
+                  </div>
+                  <div v-else-if="upload.extractedText" class="extraction-success">
+                    <span>✅ Text extracted successfully ({{ upload.extractedText.length }} characters)</span>
+                    <details class="extracted-text-preview">
+                      <summary>Preview extracted text</summary>
+                      <div class="text-preview">
+                        {{ upload.extractedText.substring(0, 500) }}{{ upload.extractedText.length > 500 ? '...' : '' }}
+                      </div>
+                    </details>
+                  </div>
+                </div>
                 <div class="file-input-container">
                   <input
                     type="file"
                     :id="`file-${upload.id}`"
                     @change="handleFileChange(upload.id, $event)"
                     class="file-input"
-                    accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                    accept=".pdf"
                   />
                   <label
                     :for="`file-${upload.id}`"
                     class="file-input-label"
                   >
                     <Upload class="icon" />
-                    {{ upload.file ? 'Change file' : 'Select file' }}
+                    {{ upload.file ? 'Change PDF' : 'Select PDF file' }}
                   </label>
                 </div>
               </div>
@@ -561,7 +644,7 @@ const goToHome = () => {
               type="button"
             >
               <Plus class="icon" />
-              Add another file
+              Add another PDF
             </button>
           </div>
 
@@ -630,13 +713,13 @@ const goToHome = () => {
             </div>
             <h3>Guma AI Response</h3>
           </div>
-          
+
           <div class="ai-response-content">
             <div v-if="isLoadingAI" class="loading-state">
               <div class="loading-spinner"></div>
               <p>Guma is analyzing your data and generating response...</p>
             </div>
-            
+
             <div v-else class="ai-text-area">
               <pre>{{ aiResponse || 'Click the menu button to get AI insights about your current setup!' }}</pre>
             </div>

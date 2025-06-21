@@ -781,3 +781,93 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+// PDF Extraction Status Styles
+.extraction-status {
+  margin-top: base.$margin-md;
+  padding: base.$padding-sm base.$padding-md;
+  border-radius: base.$border-radius-sm;
+  font-size: map-get(typography.$font-sizes, 'sm');
+
+  .extraction-loading {
+    display: flex;
+    align-items: center;
+    gap: base.$margin-sm;
+    color: colors.color("orange", "primary");
+    background: rgba(colors.color("orange", "primary"), 0.1);
+    padding: base.$padding-sm;
+    border-radius: base.$border-radius-sm;
+
+    .loading-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(colors.color("orange", "primary"), 0.3);
+      border-top: 2px solid colors.color("orange", "primary");
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    span {
+      font-weight: map-get(typography.$font-weights, 'medium');
+    }
+  }
+
+  .extraction-error {
+    color: colors.color("red", "primary");
+    background: rgba(colors.color("red", "primary"), 0.1);
+    padding: base.$padding-sm;
+    border-radius: base.$border-radius-sm;
+    border-left: 3px solid colors.color("red", "primary");
+
+    span {
+      font-weight: map-get(typography.$font-weights, 'medium');
+    }
+  }
+
+  .extraction-success {
+    color: colors.color("green", "medium-2");
+    background: rgba(colors.color("green", "medium-2"), 0.1);
+    padding: base.$padding-sm;
+    border-radius: base.$border-radius-sm;
+    border-left: 3px solid colors.color("green", "medium-2");
+
+    span {
+      font-weight: map-get(typography.$font-weights, 'medium');
+      display: block;
+      margin-bottom: base.$margin-xs;
+    }
+
+    .extracted-text-preview {
+      margin-top: base.$margin-sm;
+
+      summary {
+        cursor: pointer;
+        font-size: map-get(typography.$font-sizes, 'xs');
+        color: colors.color("neutral", "gray-light");
+        font-weight: map-get(typography.$font-weights, 'medium');
+        padding: base.$padding-xs 0;
+        border-bottom: 1px solid rgba(colors.color("green", "medium-2"), 0.2);
+        margin-bottom: base.$margin-xs;
+
+        &:hover {
+          color: colors.color("green", "medium-2");
+        }
+      }
+
+      .text-preview {
+        background: rgba(colors.color("neutral", "white-off"), 0.05);
+        padding: base.$padding-sm;
+        border-radius: base.$border-radius-sm;
+        font-family: monospace;
+        font-size: map-get(typography.$font-sizes, 'xs');
+        line-height: map-get(typography.$line-heights, 'relaxed');
+        color: colors.color("neutral", "white-off");
+        max-height: 150px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        border: 1px solid rgba(colors.color("green", "medium-2"), 0.2);
+      }
+    }
+  }
+}
