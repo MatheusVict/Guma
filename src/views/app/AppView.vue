@@ -16,10 +16,7 @@ import {
 import SelectInput from '../../components/SelectInput.vue'
 import ButtonPrimary from '../../components/buttons/ButtonPrimary.vue'
 import { useRouter } from 'vue-router'
-import * as pdfjsLib from 'pdfjs-dist'
-
-// Set up PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.3.31/pdf.min.mjs`
+import { extractTextFromPDF, isPDFFile } from '../../utils/pdfExtractor.js'
 
 interface SelectOption {
   value: string | number
@@ -33,6 +30,8 @@ interface FileUpload {
   extractedText?: string
   isExtracting?: boolean
   extractionError?: string
+  extractionProgress?: number
+  abortController?: AbortController
 }
 
 interface StepData {
@@ -109,7 +108,7 @@ const secondSelectValue = ref<string | number | null>(null)
 
 // File uploads for step 3
 const fileUploads = ref<FileUpload[]>([
-  { id: '1', file: null, name: '', extractedText: '', isExtracting: false, extractionError: '' }
+  { id: '1', file: null, name: '', extractedText: '', isExtracting: false, extractionError: '', extractionProgress: 0 }
 ])
 
 // AI Response state
@@ -256,35 +255,20 @@ const getOptionLabel = (options: SelectOption[], value: string | number): string
 }
 
 const resetProcess = () => {
+  // Cancel all ongoing extractions
+  fileUploads.value.forEach(upload => {
+    if (upload.abortController) {
+      upload.abortController.abort()
+    }
+  })
+
   currentStep.value = 1
   completedSteps.value = []
   firstSelectValue.value = null
   secondSelectValue.value = null
-  fileUploads.value = [{ id: '1', file: null, name: '', extractedText: '', isExtracting: false, extractionError: '' }]
+  fileUploads.value = [{ id: '1', file: null, name: '', extractedText: '', isExtracting: false, extractionError: '', extractionProgress: 0 }]
 }
 
-// PDF text extraction function
-const extractTextFromPDF = async (file: File): Promise<string> => {
-  try {
-    const arrayBuffer = await file.arrayBuffer()
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
-    let fullText = ''
-
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum)
-      const textContent = await page.getTextContent()
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ')
-      fullText += pageText + '\n'
-    }
-
-    return fullText.trim()
-  } catch (error) {
-    console.error('Error extracting text from PDF:', error)
-    throw new Error('Failed to extract text from PDF')
-  }
-}
 
 // File upload methods
 const handleFileChange = async (uploadId: string, event: Event) => {
@@ -293,33 +277,54 @@ const handleFileChange = async (uploadId: string, event: Event) => {
 
   const uploadIndex = fileUploads.value.findIndex(upload => upload.id === uploadId)
   if (uploadIndex !== -1) {
+    // Cancel any ongoing extraction for this upload
+    if (fileUploads.value[uploadIndex].abortController) {
+      fileUploads.value[uploadIndex].abortController.abort();
+    }
+
     // Reset previous state
     fileUploads.value[uploadIndex].file = file
     fileUploads.value[uploadIndex].name = file?.name || ''
     fileUploads.value[uploadIndex].extractedText = ''
     fileUploads.value[uploadIndex].isExtracting = false
     fileUploads.value[uploadIndex].extractionError = ''
+    fileUploads.value[uploadIndex].extractionProgress = 0
 
     // If file is selected and it's a PDF, extract text
-    if (file && file.type === 'application/pdf') {
+    if (file && isPDFFile(file)) {
       fileUploads.value[uploadIndex].isExtracting = true
 
-      try {
-        const extractedText = await extractTextFromPDF(file)
-        fileUploads.value[uploadIndex].extractedText = extractedText
-        fileUploads.value[uploadIndex].isExtracting = false
+      // Create a new AbortController for this extraction
+      const abortController = new AbortController();
+      fileUploads.value[uploadIndex].abortController = abortController;
 
-        console.log(`Extracted text from ${file.name}:`, extractedText.substring(0, 200) + '...')
+      try {
+        // Use the utility function with progress tracking and cancellation support
+        const extractedText = await extractTextFromPDF(
+          file,
+          (progress) => {
+            fileUploads.value[uploadIndex].extractionProgress = progress;
+          },
+          abortController
+        );
+
+        fileUploads.value[uploadIndex].extractedText = extractedText;
+        fileUploads.value[uploadIndex].isExtracting = false;
+
+        console.log(`Extracted text from ${file.name}:`, extractedText.substring(0, 200) + '...');
       } catch (error) {
-        fileUploads.value[uploadIndex].isExtracting = false
-        fileUploads.value[uploadIndex].extractionError = 'Failed to extract text from PDF'
-        console.error('PDF text extraction failed:', error)
+        fileUploads.value[uploadIndex].isExtracting = false;
+        fileUploads.value[uploadIndex].extractionError = error.message || 'Failed to extract text from PDF';
+        console.error('PDF text extraction failed:', error);
+      } finally {
+        // Clear the AbortController reference
+        fileUploads.value[uploadIndex].abortController = undefined;
       }
     }
 
     // If this is the last upload and a file was selected, add a new empty upload
     if (uploadIndex === fileUploads.value.length - 1 && file) {
-      addFileUpload()
+      addFileUpload();
     }
   }
 }
@@ -332,14 +337,86 @@ const addFileUpload = () => {
     name: '',
     extractedText: '',
     isExtracting: false,
-    extractionError: ''
+    extractionError: '',
+    extractionProgress: 0
   })
 }
 
 const removeFileUpload = (uploadId: string) => {
   if (fileUploads.value.length > 1) {
+    // Cancel any ongoing extraction before removing
+    cancelExtraction(uploadId);
     fileUploads.value = fileUploads.value.filter(upload => upload.id !== uploadId)
   }
+}
+
+const cancelExtraction = (uploadId: string) => {
+  const uploadIndex = fileUploads.value.findIndex(upload => upload.id === uploadId)
+  if (uploadIndex !== -1 && fileUploads.value[uploadIndex].abortController) {
+    // Abort the extraction
+    fileUploads.value[uploadIndex].abortController.abort()
+
+    // Update the UI state
+    fileUploads.value[uploadIndex].isExtracting = false
+    fileUploads.value[uploadIndex].extractionError = 'Extraction cancelled by user'
+    fileUploads.value[uploadIndex].extractionProgress = 0
+
+    console.log(`Cancelled extraction for file: ${fileUploads.value[uploadIndex].name}`)
+  }
+}
+
+const retryExtraction = async (uploadId: string) => {
+  const uploadIndex = fileUploads.value.findIndex(upload => upload.id === uploadId)
+  if (uploadIndex !== -1 && fileUploads.value[uploadIndex].file) {
+    const file = fileUploads.value[uploadIndex].file!
+    
+    // Reset state
+    fileUploads.value[uploadIndex].extractionError = ''
+    fileUploads.value[uploadIndex].extractionProgress = 0
+    fileUploads.value[uploadIndex].isExtracting = true
+
+    // Create a new AbortController for this extraction
+    const abortController = new AbortController()
+    fileUploads.value[uploadIndex].abortController = abortController
+
+    try {
+      const extractedText = await extractTextFromPDF(
+        file,
+        (progress) => {
+          fileUploads.value[uploadIndex].extractionProgress = progress
+        },
+        abortController
+      )
+
+      fileUploads.value[uploadIndex].extractedText = extractedText
+      fileUploads.value[uploadIndex].isExtracting = false
+
+      console.log(`Retry successful for ${file.name}:`, extractedText.substring(0, 200) + '...')
+    } catch (error) {
+      fileUploads.value[uploadIndex].isExtracting = false
+      fileUploads.value[uploadIndex].extractionError = error.message || 'Failed to extract text from PDF'
+      console.error('PDF text extraction retry failed:', error)
+    } finally {
+      fileUploads.value[uploadIndex].abortController = undefined
+    }
+  }
+}
+
+const getProgressMessage = (progress: number): string => {
+  if (progress < 15) return 'Preparing PDF file...'
+  if (progress < 25) return 'Loading document...'
+  if (progress < 95) return 'Processing pages...'
+  return 'Finalizing extraction...'
+}
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes'
+  
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
 // AI Response functions
@@ -602,20 +679,102 @@ const goToHome = () => {
                 <!-- PDF extraction status -->
                 <div v-if="upload.file" class="extraction-status">
                   <div v-if="upload.isExtracting" class="extraction-loading">
-                    <div class="loading-spinner"></div>
-                    <span>Extracting text from PDF...</span>
-                  </div>
-                  <div v-else-if="upload.extractionError" class="extraction-error">
-                    <span>❌ {{ upload.extractionError }}</span>
-                  </div>
-                  <div v-else-if="upload.extractedText" class="extraction-success">
-                    <span>✅ Text extracted successfully ({{ upload.extractedText.length }} characters)</span>
-                    <details class="extracted-text-preview">
-                      <summary>Preview extracted text</summary>
-                      <div class="text-preview">
-                        {{ upload.extractedText.substring(0, 500) }}{{ upload.extractedText.length > 500 ? '...' : '' }}
+                    <div class="extraction-progress-container">
+                      <!-- Circular Progress Indicator -->
+                      <div class="circular-progress">
+                        <svg class="progress-ring" width="60" height="60">
+                          <circle
+                            class="progress-ring-circle-bg"
+                            stroke="#e0e0e0"
+                            stroke-width="4"
+                            fill="transparent"
+                            r="26"
+                            cx="30"
+                            cy="30"
+                          />
+                          <circle
+                            class="progress-ring-circle"
+                            stroke="#4caf50"
+                            stroke-width="4"
+                            fill="transparent"
+                            r="26"
+                            cx="30"
+                            cy="30"
+                            :stroke-dasharray="`${2 * Math.PI * 26}`"
+                            :stroke-dashoffset="`${2 * Math.PI * 26 * (1 - upload.extractionProgress / 100)}`"
+                          />
+                        </svg>
+                        <div class="progress-percentage">{{ Math.round(upload.extractionProgress) }}%</div>
                       </div>
-                    </details>
+                      
+                      <!-- Progress Details -->
+                      <div class="progress-details">
+                        <div class="progress-text">
+                          <span class="progress-title">Extracting PDF Content</span>
+                          <span class="progress-subtitle">{{ getProgressMessage(upload.extractionProgress) }}</span>
+                        </div>
+                        
+                        <!-- Linear Progress Bar -->
+                        <div class="progress-bar-container">
+                          <div class="progress-bar">
+                            <div 
+                              class="progress-fill" 
+                              :style="{ width: `${upload.extractionProgress}%` }"
+                            ></div>
+                          </div>
+                          <span class="progress-label">{{ Math.round(upload.extractionProgress) }}% Complete</span>
+                        </div>
+                        
+                        <!-- Cancel Button -->
+                        <button
+                          @click="cancelExtraction(upload.id)"
+                          class="cancel-extraction-btn"
+                          type="button"
+                          title="Cancel extraction"
+                        >
+                          <X class="icon" />
+                          <span>Cancel</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div v-else-if="upload.extractionError" class="extraction-error">
+                    <div class="error-icon">⚠️</div>
+                    <div class="error-content">
+                      <span class="error-title">Extraction Failed</span>
+                      <span class="error-message">{{ upload.extractionError }}</span>
+                      <button
+                        @click="retryExtraction(upload.id)"
+                        class="retry-btn"
+                        type="button"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div v-else-if="upload.extractedText" class="extraction-success">
+                    <div class="success-icon">✅</div>
+                    <div class="success-content">
+                      <span class="success-title">Text Extracted Successfully</span>
+                      <span class="success-details">{{ formatFileSize(upload.extractedText.length) }} of text content extracted</span>
+                      <details class="extracted-text-preview">
+                        <summary class="preview-toggle">
+                          <span>Preview Content</span>
+                          <ChevronRight class="chevron-icon" />
+                        </summary>
+                        <div class="text-preview">
+                          <div class="preview-header">
+                            <span>First 500 characters:</span>
+                            <span class="character-count">{{ upload.extractedText.length }} total characters</span>
+                          </div>
+                          <div class="preview-text">
+                            {{ upload.extractedText.substring(0, 500) }}{{ upload.extractedText.length > 500 ? '...' : '' }}
+                          </div>
+                        </div>
+                      </details>
+                    </div>
                   </div>
                 </div>
                 <div class="file-input-container">
@@ -732,4 +891,284 @@ const goToHome = () => {
 
 <style scoped lang="scss">
 @import "../../assets/styles/pages/app/index";
+
+// Enhanced extraction progress styles
+.extraction-status {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+}
+
+.extraction-loading {
+  .extraction-progress-container {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .circular-progress {
+    position: relative;
+    flex-shrink: 0;
+
+    .progress-ring {
+      transform: rotate(-90deg);
+    }
+
+    .progress-ring-circle {
+      transition: stroke-dashoffset 0.3s ease;
+      stroke-linecap: round;
+    }
+
+    .progress-percentage {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #4caf50;
+    }
+  }
+
+  .progress-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .progress-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    .progress-title {
+      font-weight: 600;
+      color: #333;
+      font-size: 0.875rem;
+    }
+
+    .progress-subtitle {
+      font-size: 0.75rem;
+      color: #666;
+    }
+  }
+
+  .progress-bar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background-color: #e0e0e0;
+      border-radius: 3px;
+      overflow: hidden;
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4caf50, #66bb6a);
+        transition: width 0.3s ease;
+        border-radius: 3px;
+      }
+    }
+
+    .progress-label {
+      font-size: 0.75rem;
+      color: #666;
+      align-self: flex-end;
+    }
+  }
+
+  .cancel-extraction-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: #ff5722;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    align-self: flex-start;
+
+    &:hover {
+      background-color: #e64a19;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(255, 87, 34, 0.3);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    .icon {
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+.extraction-error {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 1rem;
+  background-color: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+
+  .error-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .error-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    .error-title {
+      font-weight: 600;
+      color: #d32f2f;
+      font-size: 0.875rem;
+    }
+
+    .error-message {
+      font-size: 0.8rem;
+      color: #666;
+      line-height: 1.4;
+    }
+
+    .retry-btn {
+      padding: 0.5rem 1rem;
+      background-color: #2196f3;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      align-self: flex-start;
+
+      &:hover {
+        background-color: #1976d2;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+}
+
+.extraction-success {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 1rem;
+  background-color: #e8f5e8;
+  border: 1px solid #c8e6c9;
+  border-radius: 8px;
+
+  .success-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .success-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    .success-title {
+      font-weight: 600;
+      color: #2e7d32;
+      font-size: 0.875rem;
+    }
+
+    .success-details {
+      font-size: 0.8rem;
+      color: #666;
+    }
+
+    .extracted-text-preview {
+      margin-top: 0.5rem;
+
+      .preview-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        font-size: 0.8rem;
+        color: #2196f3;
+        font-weight: 500;
+        padding: 0.25rem 0;
+        transition: color 0.2s ease;
+
+        &:hover {
+          color: #1976d2;
+        }
+
+        .chevron-icon {
+          width: 14px;
+          height: 14px;
+          transition: transform 0.2s ease;
+        }
+      }
+
+      &[open] .preview-toggle .chevron-icon {
+        transform: rotate(90deg);
+      }
+
+      .text-preview {
+        margin-top: 0.75rem;
+        padding: 0.75rem;
+        background-color: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+
+        .preview-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5rem;
+          font-size: 0.75rem;
+          color: #666;
+
+          .character-count {
+            font-weight: 500;
+            color: #4caf50;
+          }
+        }
+
+        .preview-text {
+          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+          font-size: 0.75rem;
+          line-height: 1.4;
+          color: #333;
+          white-space: pre-wrap;
+          word-break: break-word;
+          max-height: 200px;
+          overflow-y: auto;
+          padding: 0.5rem;
+          background-color: #f8f9fa;
+          border-radius: 4px;
+        }
+      }
+    }
+  }
+}
 </style>
