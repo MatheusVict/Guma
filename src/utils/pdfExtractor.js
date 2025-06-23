@@ -1,36 +1,23 @@
 import * as pdfjsLib from 'pdfjs-dist'
 
-// Set the worker source - use CDN for development, will be bundled for production
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.3.31/pdf.worker.min.mjs'
 
-
-/**
- * Extract text from a PDF file with progress tracking and cancellation support
- * @param {File} file - The PDF file to extract text from
- * @param {Function} onProgress - Callback function to report progress (0-100)
- * @param {AbortController} abortController - Controller to handle cancellation
- * @returns {Promise<string>} - The extracted text
- */
 export async function extractTextFromPDF(file, onProgress = null, abortController = null) {
-  const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB limit
+  const MAX_FILE_SIZE = 50 * 1024 * 1024
 
   try {
     console.log('Starting PDF text extraction for:', file.name)
 
-    // Check file size
     if (file.size > MAX_FILE_SIZE) {
       throw new Error(`File too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB`)
     }
 
-    // Check if already aborted
     if (abortController?.signal.aborted) {
       throw new Error('Extraction was cancelled')
     }
 
-    // Report initial progress
     if (onProgress) onProgress(5)
 
-    // Convert file to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer()
 
     if (abortController?.signal.aborted) {
@@ -39,7 +26,6 @@ export async function extractTextFromPDF(file, onProgress = null, abortControlle
 
     if (onProgress) onProgress(15)
 
-    // Load the PDF document
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
 
     if (abortController?.signal.aborted) {
@@ -51,7 +37,6 @@ export async function extractTextFromPDF(file, onProgress = null, abortControlle
     let fullText = ''
     const totalPages = pdf.numPages
 
-    // Extract text from each page
     for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
       if (abortController?.signal.aborted) {
         throw new Error('Extraction was cancelled')
@@ -60,19 +45,17 @@ export async function extractTextFromPDF(file, onProgress = null, abortControlle
       const page = await pdf.getPage(pageNum)
       const textContent = await page.getTextContent()
 
-      // Combine text items from the page
       const pageText = textContent.items
         .map(item => item.str)
         .join(' ')
-        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .replace(/\s+/g, ' ')
         .trim()
 
       if (pageText) {
         fullText += `\n--- Page ${pageNum} ---\n${pageText}\n`
       }
 
-      // Update progress based on pages processed
-      const pageProgress = Math.floor((pageNum / totalPages) * 70) + 25 // 25-95%
+      const pageProgress = Math.floor((pageNum / totalPages) * 70) + 25
       if (onProgress) onProgress(pageProgress)
     }
 
@@ -97,20 +80,10 @@ export async function extractTextFromPDF(file, onProgress = null, abortControlle
   }
 }
 
-/**
- * Validate if a file is a PDF
- * @param {File} file - The file to validate
- * @returns {boolean} - True if the file is a PDF
- */
 export function isPDFFile(file) {
   return file && file.type === 'application/pdf'
 }
 
-/**
- * Get file size in a human-readable format
- * @param {number} bytes - File size in bytes
- * @returns {string} - Formatted file size
- */
 export function formatFileSize(bytes) {
   if (bytes === 0) return '0 Bytes'
 

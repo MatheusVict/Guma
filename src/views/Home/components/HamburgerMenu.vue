@@ -119,7 +119,7 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('keydown', handleKeyDown)
-  toggleBodyScroll(false) // Ensure body scroll is restored
+  toggleBodyScroll(false)
 })
 </script>
 

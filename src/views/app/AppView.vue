@@ -57,19 +57,14 @@ async function getAllDisciplinesEnrolled(accessToken: string): Promise<{ id: str
 
 const getToken = getCanvasToken();
 
-// Reactive disciplines list - starts empty and gets populated from API
 const disciplines = ref<SelectOption[]>([])
 
-// Loading state for disciplines
 const isLoadingDisciplines = ref<boolean>(false)
-
-// Function to load disciplines from API
 const loadDisciplines = async () => {
   try {
     isLoadingDisciplines.value = true
     const response = await getAllDisciplinesEnrolled(getToken)
     
-    // Transform API response to SelectOption format
     disciplines.value = response.map(discipline => ({
       value: discipline.id,
       label: discipline.name
@@ -78,7 +73,6 @@ const loadDisciplines = async () => {
     console.log('Disciplines loaded:', disciplines.value)
   } catch (error) {
     console.error('Failed to load disciplines:', error)
-    // Fallback to sample data if API fails
     disciplines.value = [
       { value: 'math', label: 'Mathematics' },
       { value: 'physics', label: 'Physics' },
@@ -131,25 +125,19 @@ const rubrics: SelectOption[] = [
   {value: 'rubric-comprehensive', label: 'Comprehensive Evaluation Rubric'}
 ]
 
-// Component state
 const currentStep = ref<number>(1)
 const completedSteps = ref<StepData[]>([])
 
-// Current step selections
 const firstSelectValue = ref<string | number | null>(null)
 const secondSelectValue = ref<string | number | null>(null)
 
-// File uploads for step 3
 const fileUploads = ref<FileUpload[]>([
   {id: '1', file: null, name: '', extractedText: '', isExtracting: false, extractionError: '', extractionProgress: 0}
 ])
 
-// AI Response state
 const showAIResponse = ref<boolean>(false)
 const aiResponse = ref<string>('')
 const isLoadingAI = ref<boolean>(false)
-
-// Computed properties for current step
 const currentStepConfig = computed(() => {
   switch (currentStep.value) {
     case 1:
@@ -215,7 +203,6 @@ const currentStepConfig = computed(() => {
 
 const canProceed = computed(() => {
   if (currentStep.value === 3) {
-    // For step 3, check if at least one PDF file is uploaded and text is extracted successfully
     return fileUploads.value.some(upload =>
       upload.file !== null &&
       upload.extractedText &&
@@ -231,21 +218,17 @@ const isCompleted = computed(() => {
   return currentStep.value > 3
 })
 
-// Watch for first select changes to reset second select
 watch(firstSelectValue, () => {
   secondSelectValue.value = null
 })
 
-// Load disciplines when component mounts
 onMounted(() => {
   loadDisciplines()
 })
 
-// Methods
 const handleNext = async () => {
   if (!canProceed.value) return
 
-  // Save current step data
   const stepData: StepData = {
     step: currentStep.value,
     firstSelect: {
@@ -260,7 +243,6 @@ const handleNext = async () => {
     }
   }
 
-  // For step 3, save file uploads instead of select values
   if (currentStep.value === 3) {
     stepData.files = [...fileUploads.value.filter(upload => upload.file !== null)]
     stepData.firstSelect = {value: 'files', label: 'Files Uploaded', options: []}
@@ -269,19 +251,15 @@ const handleNext = async () => {
 
   completedSteps.value.push(stepData)
 
-  // If completing step 3, make API call and show AI response
   if (currentStep.value === 3) {
     await makeCompletionAPICall()
   }
 
-  // Move to next step
   currentStep.value++
 
-  // Reset selections for next step
   firstSelectValue.value = null
   secondSelectValue.value = null
 
-  // Reset file uploads for next time
   if (currentStep.value > 3) {
     fileUploads.value = [{id: '1', file: null, name: '', extractedText: '', isExtracting: false, extractionError: ''}]
   }
@@ -293,7 +271,6 @@ const getOptionLabel = (options: SelectOption[], value: string | number): string
 }
 
 const resetProcess = () => {
-  // Cancel all ongoing extractions
   fileUploads.value.forEach(upload => {
     if (upload.abortController) {
       upload.abortController.abort()
@@ -315,20 +292,16 @@ const resetProcess = () => {
   }]
 }
 
-
-// File upload methods
 const handleFileChange = async (uploadId: string, event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0] || null
 
   const uploadIndex = fileUploads.value.findIndex(upload => upload.id === uploadId)
   if (uploadIndex !== -1) {
-    // Cancel any ongoing extraction for this upload
     if (fileUploads.value[uploadIndex].abortController) {
       fileUploads.value[uploadIndex].abortController.abort();
     }
 
-    // Reset previous state
     fileUploads.value[uploadIndex].file = file
     fileUploads.value[uploadIndex].name = file?.name || ''
     fileUploads.value[uploadIndex].extractedText = ''
@@ -336,16 +309,13 @@ const handleFileChange = async (uploadId: string, event: Event) => {
     fileUploads.value[uploadIndex].extractionError = ''
     fileUploads.value[uploadIndex].extractionProgress = 0
 
-    // If file is selected and it's a PDF, extract text
     if (file && isPDFFile(file)) {
       fileUploads.value[uploadIndex].isExtracting = true
 
-      // Create a new AbortController for this extraction
       const abortController = new AbortController();
       fileUploads.value[uploadIndex].abortController = abortController;
 
       try {
-        // Use the utility function with progress tracking and cancellation support
         const extractedText = await extractTextFromPDF(
           file,
           (progress) => {
@@ -363,12 +333,10 @@ const handleFileChange = async (uploadId: string, event: Event) => {
         fileUploads.value[uploadIndex].extractionError = error.message || 'Failed to extract text from PDF';
         console.error('PDF text extraction failed:', error);
       } finally {
-        // Clear the AbortController reference
         fileUploads.value[uploadIndex].abortController = undefined;
       }
     }
 
-    // If this is the last upload and a file was selected, add a new empty upload
     if (uploadIndex === fileUploads.value.length - 1 && file) {
       addFileUpload();
     }
@@ -390,7 +358,6 @@ const addFileUpload = () => {
 
 const removeFileUpload = (uploadId: string) => {
   if (fileUploads.value.length > 1) {
-    // Cancel any ongoing extraction before removing
     cancelExtraction(uploadId);
     fileUploads.value = fileUploads.value.filter(upload => upload.id !== uploadId)
   }
@@ -399,10 +366,8 @@ const removeFileUpload = (uploadId: string) => {
 const cancelExtraction = (uploadId: string) => {
   const uploadIndex = fileUploads.value.findIndex(upload => upload.id === uploadId)
   if (uploadIndex !== -1 && fileUploads.value[uploadIndex].abortController) {
-    // Abort the extraction
     fileUploads.value[uploadIndex].abortController.abort()
 
-    // Update the UI state
     fileUploads.value[uploadIndex].isExtracting = false
     fileUploads.value[uploadIndex].extractionError = 'Extraction cancelled by user'
 
@@ -410,9 +375,7 @@ const cancelExtraction = (uploadId: string) => {
   }
 }
 
-// AI Response functions
 const toggleAIResponse = async () => {
-  // Only allow toggle if steps are completed
   if (!isCompleted.value) return
 
   showAIResponse.value = !showAIResponse.value
@@ -420,7 +383,6 @@ const toggleAIResponse = async () => {
     if (!aiResponse.value) {
       await generateAIResponse()
     }
-    // Scroll to AI response area when showing
     await scrollToAIResponse()
   }
 }
@@ -429,10 +391,8 @@ const generateAIResponse = async () => {
   isLoadingAI.value = true
   aiResponse.value = ''
 
-  // Simulate API call delay
   await new Promise(resolve => setTimeout(resolve, 2000))
 
-  // Fake AI response based on current data
   const currentData = getCurrentFormData()
   aiResponse.value = generateFakeAIResponse(currentData)
 
@@ -482,7 +442,6 @@ const makeCompletionAPICall = async () => {
   isLoadingAI.value = true
   showAIResponse.value = true
 
-  // Simulate API call with all collected data
   const allData = {
     completedSteps: completedSteps.value,
     totalSteps: 3,
@@ -491,10 +450,7 @@ const makeCompletionAPICall = async () => {
 
   console.log('Making API call with data:', allData)
 
-  // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 3000))
-
-  // Generate completion response
   aiResponse.value = `🎉 Excellent! Your Guma Agent setup is now complete and I've processed all your information.
 
 Based on your configuration:
@@ -516,12 +472,10 @@ Your educational content creation journey starts now! I'll use all the informati
 
   isLoadingAI.value = false
 
-  // Smooth scroll to AI response area after response is ready
   await scrollToAIResponse()
 }
 
 const scrollToAIResponse = async () => {
-  // Wait a bit for DOM to update
   await new Promise(resolve => setTimeout(resolve, 100))
 
   const aiResponseElement = document.querySelector('.ai-response-area')
@@ -543,10 +497,7 @@ const goToHome = () => {
 
 <template>
   <div class="guma-agent">
-    <!-- Background pattern -->
     <div class="background-pattern"></div>
-
-    <!-- Left Sidebar -->
     <div class="sidebar">
       <div class="sidebar-icons">
         <button class="sidebar-btn" :class="{ active: currentStep === 1 }">
@@ -562,9 +513,7 @@ const goToHome = () => {
       </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
-      <!-- Header -->
       <header class="header">
         <div class="logo-section">
           <div class="mascot">
@@ -577,7 +526,6 @@ const goToHome = () => {
         </button>
       </header>
 
-      <!-- Progress indicator -->
       <div class="progress-indicator">
         <div
           v-for="step in 3"
@@ -593,16 +541,13 @@ const goToHome = () => {
         </div>
       </div>
 
-      <!-- Content Section -->
       <div class="content-section">
-        <!-- Current step or completion -->
         <div v-if="!isCompleted" class="step-container">
           <h2 class="step-title">{{ currentStepConfig.title }}</h2>
           <p class="description">
             {{ currentStepConfig.description }}
           </p>
 
-          <!-- Cards Section for Steps 1 & 2 -->
           <div v-if="currentStep !== 3" class="cards-container">
             <div class="card" :class="{ 'selected': firstSelectValue }">
               <div class="card-icon">
@@ -644,7 +589,6 @@ const goToHome = () => {
             </div>
           </div>
 
-          <!-- File Upload Section for Step 3 -->
           <div v-else class="file-upload-container">
             <div
               v-for="upload in fileUploads"
@@ -670,7 +614,6 @@ const goToHome = () => {
                   </button>
                 </div>
 
-                <!-- PDF extraction status -->
                 <div v-if="upload.file" class="extraction-status">
                   <div v-if="upload.isExtracting" class="extraction-loading">
                     <div class="loading-spinner"></div>
@@ -721,7 +664,6 @@ const goToHome = () => {
               </div>
             </div>
 
-            <!-- Add more files button -->
             <button
               @click="addFileUpload"
               class="add-file-btn"
@@ -732,7 +674,6 @@ const goToHome = () => {
             </button>
           </div>
 
-          <!-- Next Button -->
           <div class="button-container">
             <ButtonPrimary
               :text="currentStep === 3 ? 'Complete' : 'Next'"
@@ -742,7 +683,6 @@ const goToHome = () => {
           </div>
         </div>
 
-        <!-- Completion summary -->
         <div v-else class="completion-container">
           <div class="completion-icon">
             <CheckCircle class="icon"/>
@@ -780,7 +720,6 @@ const goToHome = () => {
           </div>
         </div>
 
-        <!-- Previous selections display -->
         <div v-if="completedSteps.length > 0 && !isCompleted" class="previous-selections">
           <h3>Previous Selections:</h3>
           <div v-for="step in completedSteps" :key="step.step" class="previous-step">
@@ -789,7 +728,6 @@ const goToHome = () => {
           </div>
         </div>
 
-        <!-- AI Response Area -->
         <div v-if="showAIResponse && isCompleted" class="ai-response-area">
           <div class="ai-response-header">
             <div class="ai-avatar">
