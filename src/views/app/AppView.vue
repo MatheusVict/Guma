@@ -90,29 +90,7 @@ const loadDisciplines = async () => {
   }
 }
 
-const professors: Record<string, SelectOption[]> = {
-  'math': [
-    {value: 'prof-smith', label: 'Prof. Smith'},
-    {value: 'prof-johnson', label: 'Prof. Johnson'},
-    {value: 'prof-williams', label: 'Prof. Williams'}
-  ],
-  'physics': [
-    {value: 'prof-brown', label: 'Prof. Brown'},
-    {value: 'prof-davis', label: 'Prof. Davis'}
-  ],
-  'chemistry': [
-    {value: 'prof-miller', label: 'Prof. Miller'},
-    {value: 'prof-wilson', label: 'Prof. Wilson'}
-  ],
-  'biology': [
-    {value: 'prof-moore', label: 'Prof. Moore'},
-    {value: 'prof-taylor', label: 'Prof. Taylor'}
-  ],
-  'computer-science': [
-    {value: 'prof-anderson', label: 'Prof. Anderson'},
-    {value: 'prof-thomas', label: 'Prof. Thomas'}
-  ]
-}
+
 
 const assignments: SelectOption[] = [
   {value: 'assignment-1', label: 'Assignment 1: Basic Concepts'},
@@ -147,8 +125,8 @@ const currentStepConfig = computed(() => {
   switch (currentStep.value) {
     case 1:
       return {
-        title: 'Select Discipline and Professor',
-        description: 'Choose your academic discipline and preferred professor to get started.',
+        title: 'Select Discipline',
+        description: 'Choose your academic discipline to get started.',
         firstSelect: {
           label: 'Disciplina',
           options: disciplines.value,
@@ -156,9 +134,9 @@ const currentStepConfig = computed(() => {
           icon: BookOpen
         },
         secondSelect: {
-          label: 'Estilo do Professor',
-          options: firstSelectValue.value ? professors[firstSelectValue.value as string] || [] : [],
-          placeholder: 'Choose a professor...',
+          label: '',
+          options: [],
+          placeholder: '',
           icon: GraduationCap
         }
       }
@@ -216,6 +194,9 @@ const canProceed = computed(() => {
       !upload.extractionError
     )
   }
+  if (currentStep.value === 1) {
+    return firstSelectValue.value !== null
+  }
   return firstSelectValue.value !== null && secondSelectValue.value !== null
 })
 
@@ -223,9 +204,7 @@ const isCompleted = computed(() => {
   return currentStep.value > 3
 })
 
-watch(firstSelectValue, () => {
-  secondSelectValue.value = null
-})
+
 
 onMounted(() => {
   loadDisciplines()
@@ -242,8 +221,8 @@ const handleNext = async () => {
       options: currentStepConfig.value.firstSelect.options
     },
     secondSelect: {
-      value: secondSelectValue.value!,
-      label: getOptionLabel(currentStepConfig.value.secondSelect.options, secondSelectValue.value!),
+      value: currentStep.value === 1 ? 'n/a' : secondSelectValue.value!,
+      label: currentStep.value === 1 ? 'N/A' : getOptionLabel(currentStepConfig.value.secondSelect.options, secondSelectValue.value!),
       options: currentStepConfig.value.secondSelect.options
     }
   }
@@ -573,7 +552,7 @@ const goToHome = () => {
               </div>
             </div>
 
-            <div class="card" :class="{ 'selected': secondSelectValue, 'disabled': !firstSelectValue }">
+            <div v-if="currentStep !== 1" class="card" :class="{ 'selected': secondSelectValue, 'disabled': !firstSelectValue }">
               <div class="card-icon">
                 <component :is="currentStepConfig.secondSelect.icon" class="icon"/>
               </div>
