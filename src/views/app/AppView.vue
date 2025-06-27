@@ -95,6 +95,13 @@ async function getAllRubricsFromAssignment(courseId: string, assignmentId: strin
 const getToken = getCanvasToken();
 
 const disciplines = ref<SelectOption[]>([])
+const professorStyles = ref<SelectOption[]>([
+  { value: 'interactive', label: 'Marcos' },
+  { value: 'analytical', label: 'Melina' },
+  { value: 'supportive', label: 'Rodrigo' },
+  { value: 'traditional', label: 'Vitor' },
+  { value: 'creative', label: 'Pablo' }
+])
 
 const isLoadingDisciplines = ref<boolean>(false)
 const loadDisciplines = async () => {
@@ -223,8 +230,8 @@ const currentStepConfig = computed(() => {
   switch (currentStep.value) {
     case 1:
       return {
-        title: 'Select Discipline',
-        description: 'Choose your academic discipline to get started.',
+        title: 'Select Discipline and Professor',
+        description: 'Choose your academic discipline and teaching style to get started.',
         firstSelect: {
           label: 'Disciplina',
           options: disciplines.value,
@@ -232,9 +239,9 @@ const currentStepConfig = computed(() => {
           icon: BookOpen
         },
         secondSelect: {
-          label: '',
-          options: [],
-          placeholder: '',
+          label: 'Professor Style',
+          options: professorStyles.value,
+          placeholder: 'Choose your teaching style...',
           icon: GraduationCap
         }
       }
@@ -293,7 +300,7 @@ const canProceed = computed(() => {
     )
   }
   if (currentStep.value === 1) {
-    return firstSelectValue.value !== null
+    return firstSelectValue.value !== null && secondSelectValue.value !== null
   }
   if (currentStep.value === 2) {
     return firstSelectValue.value !== null && secondSelectValue.value !== null
@@ -321,8 +328,8 @@ const handleNext = async () => {
       options: currentStepConfig.value.firstSelect.options
     },
     secondSelect: {
-      value: currentStep.value === 1 ? 'n/a' : secondSelectValue.value!,
-      label: currentStep.value === 1 ? 'N/A' : getOptionLabel(currentStepConfig.value.secondSelect.options, secondSelectValue.value!),
+      value: secondSelectValue.value!,
+      label: getOptionLabel(currentStepConfig.value.secondSelect.options, secondSelectValue.value!),
       options: currentStepConfig.value.secondSelect.options
     }
   }
@@ -352,7 +359,7 @@ const handleNext = async () => {
 }
 
 const getOptionLabel = (options: SelectOption[], value: string | number): string => {
-  const option = options.find(opt => opt.value === value)
+  const option = options.find(opt => opt.value == value) // Use == instead of === to handle type coercion
   return option ? option.label : String(value)
 }
 
@@ -658,8 +665,8 @@ const goToHome = () => {
               </div>
             </div>
 
-            <div v-if="currentStep !== 1" class="card"
-                 :class="{ 'selected': secondSelectValue, 'disabled': !firstSelectValue }">
+            <div class="card"
+                 :class="{ 'selected': secondSelectValue, 'disabled': currentStep === 2 && !firstSelectValue }">
               <div class="card-icon">
                 <component :is="currentStepConfig.secondSelect.icon" class="icon"/>
               </div>
@@ -673,7 +680,7 @@ const goToHome = () => {
                     v-model="secondSelectValue"
                     :options="currentStepConfig.secondSelect.options"
                     :placeholder="currentStepConfig.secondSelect.placeholder"
-                    :disabled="!firstSelectValue"
+                    :disabled="currentStep === 2 && !firstSelectValue"
                   />
                 </div>
               </div>
