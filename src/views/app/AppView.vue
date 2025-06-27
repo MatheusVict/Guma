@@ -53,7 +53,30 @@ interface StepData {
     label: string
     options: SelectOption[]
   }
+  thirdSelect?: {
+    value: string | number | null
+    label: string
+    options: SelectOption[]
+  }
   files?: FileUpload[]
+}
+
+interface APIResponse {
+  rubric: Rubric[]
+}
+interface Rubric {
+  id: string
+  points: number
+  description: string
+  ratings: Rating[]
+  criterion_use_range: boolean
+}
+
+export interface Rating {
+  id: string
+  points: number
+  description: string
+  long_description: string
 }
 
 async function getAllDisciplinesEnrolled(accessToken: string): Promise<ApiSelectOption[]> {
@@ -62,6 +85,11 @@ async function getAllDisciplinesEnrolled(accessToken: string): Promise<ApiSelect
 
 async function getAssignmentsByCourseId(courseId: string, accessToken: string): Promise<ApiSelectOption[]> {
   return await CanvasRequest.getAssignmentsByCourseId(courseId, accessToken);
+}
+
+async function getAllRubricsFromAssignment(courseId: string, assignmentId: string, accessToken: string): Promise<APIResponse> {
+  console.log('rubrics called')
+  return await CanvasRequest.getAssignmentById(courseId, assignmentId, accessToken);
 }
 
 const getToken = getCanvasToken();
@@ -98,30 +126,26 @@ const loadDisciplines = async () => {
 const assignments = ref<SelectOption[]>([])
 const isLoadingAssignments = ref<boolean>(false)
 
-const rubrics: SelectOption[] = [
-  {value: 'rubric-basic', label: 'Basic Evaluation Rubric'},
-  {value: 'rubric-detailed', label: 'Detailed Assessment Rubric'},
-  {value: 'rubric-research', label: 'Research Project Rubric'},
-  {value: 'rubric-presentation', label: 'Presentation Rubric'},
-  {value: 'rubric-comprehensive', label: 'Comprehensive Evaluation Rubric'}
-]
+const rubrics = ref<SelectOption[]>([])
+const isLoadingRubrics = ref<boolean>(false)
 
 const currentStep = ref<number>(1)
 const completedSteps = ref<StepData[]>([])
 
 const firstSelectValue = ref<string | number | null>(null)
 const secondSelectValue = ref<string | number | null>(null)
+const thirdSelectValue = ref<string | number | null>(null)
 
 const loadAssignments = async (disciplineId: string) => {
   try {
     isLoadingAssignments.value = true
     const response = await getAssignmentsByCourseId(disciplineId, getToken)
-    
+
     assignments.value = response.map(assignment => ({
       value: assignment.id,
       label: assignment.name
     }))
-    
+
     console.log('Assignments loaded:', assignments.value)
   } catch (error) {
     console.error('Failed to load assignments:', error)
@@ -137,13 +161,55 @@ const loadAssignments = async (disciplineId: string) => {
   }
 }
 
+const loadRubrics = async (courseId: string, assignmentId: string) => {
+  try {
+    isLoadingRubrics.value = true
+    const response = await getAllRubricsFromAssignment(courseId, assignmentId, getToken)
+
+    rubrics.value = response.rubric.map(rubric => ({
+      value: assignmentId, // Use assignment ID as value as requested
+      label: rubric.description
+    }))
+
+    console.log('Rubrics loaded:', rubrics.value)
+  } catch (error) {
+    console.error('Failed to load rubrics:', error)
+    rubrics.value = [
+      {value: assignmentId, label: 'Basic Evaluation Rubric'},
+      {value: assignmentId, label: 'Detailed Assessment Rubric'},
+      {value: assignmentId, label: 'Research Project Rubric'},
+      {value: assignmentId, label: 'Presentation Rubric'},
+      {value: assignmentId, label: 'Comprehensive Evaluation Rubric'}
+    ]
+  } finally {
+    isLoadingRubrics.value = false
+  }
+}
+
 // Watch for discipline selection to load assignments
 watch(firstSelectValue, (newValue) => {
   if (newValue && currentStep.value === 1) {
     loadAssignments(newValue as string)
   }
-  // Reset second select when first select changes
+  // Reset second and third select when first select changes
   secondSelectValue.value = null
+  thirdSelectValue.value = null
+
+  // In step 2, firstSelectValue is the assignment, so load rubrics when it changes
+  if (newValue && currentStep.value === 2) {
+    // Get the discipline ID from the completed step 1
+    const disciplineId = completedSteps.value.find(step => step.step === 1)?.firstSelect.value as string
+    if (disciplineId) {
+      loadRubrics(disciplineId, newValue as string)
+    }
+  }
+})
+
+// Watch for assignment selection to load rubrics
+watch(secondSelectValue, (newValue) => {
+  // This watcher is no longer needed for loading rubrics since it's handled in firstSelectValue watcher
+  // Reset third select when second select changes
+  thirdSelectValue.value = null
 })
 
 const fileUploads = ref<FileUpload[]>([
@@ -184,8 +250,8 @@ const currentStepConfig = computed(() => {
         },
         secondSelect: {
           label: 'Rubric',
-          options: rubrics,
-          placeholder: 'Choose a rubric...',
+          options: rubrics.value,
+          placeholder: isLoadingRubrics.value ? 'Loading rubrics...' : 'Choose a rubric...',
           icon: GraduationCap
         }
       }
@@ -228,6 +294,9 @@ const canProceed = computed(() => {
   }
   if (currentStep.value === 1) {
     return firstSelectValue.value !== null
+  }
+  if (currentStep.value === 2) {
+    return firstSelectValue.value !== null && secondSelectValue.value !== null
   }
   return firstSelectValue.value !== null && secondSelectValue.value !== null
 })
@@ -275,6 +344,7 @@ const handleNext = async () => {
 
   firstSelectValue.value = null
   secondSelectValue.value = null
+  thirdSelectValue.value = null
 
   if (currentStep.value > 3) {
     fileUploads.value = [{id: '1', file: null, name: '', extractedText: '', isExtracting: false, extractionError: ''}]
@@ -297,6 +367,7 @@ const resetProcess = () => {
   completedSteps.value = []
   firstSelectValue.value = null
   secondSelectValue.value = null
+  thirdSelectValue.value = null
   fileUploads.value = [{
     id: '1',
     file: null,
@@ -392,6 +463,7 @@ const cancelExtraction = (uploadId: string) => {
 }
 
 const toggleAIResponse = async () => {
+  console.log('form', getCurrentFormData())
   if (!isCompleted.value) return
 
   showAIResponse.value = !showAIResponse.value
@@ -404,12 +476,14 @@ const toggleAIResponse = async () => {
 }
 
 const generateAIResponse = async () => {
+  console.log('ai response')
   isLoadingAI.value = true
   aiResponse.value = ''
 
   await new Promise(resolve => setTimeout(resolve, 2000))
 
   const currentData = getCurrentFormData()
+  console.log('currentData', currentData)
   aiResponse.value = generateFakeAIResponse(currentData)
 
   isLoadingAI.value = false
