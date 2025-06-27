@@ -60,6 +60,10 @@ async function getAllDisciplinesEnrolled(accessToken: string): Promise<ApiSelect
   return await CanvasRequest.getAllDisciplinesEnrolled(accessToken);
 }
 
+async function getAssignmentsByCourseId(courseId: string, accessToken: string): Promise<ApiSelectOption[]> {
+  return await CanvasRequest.getAssignmentsByCourseId(courseId, accessToken);
+}
+
 const getToken = getCanvasToken();
 
 const disciplines = ref<SelectOption[]>([])
@@ -79,11 +83,11 @@ const loadDisciplines = async () => {
   } catch (error) {
     console.error('Failed to load disciplines:', error)
     disciplines.value = [
-      { value: 'math', label: 'Mathematics' },
-      { value: 'physics', label: 'Physics' },
-      { value: 'chemistry', label: 'Chemistry' },
-      { value: 'biology', label: 'Biology' },
-      { value: 'computer-science', label: 'Computer Science' }
+      {value: 'math', label: 'Mathematics'},
+      {value: 'physics', label: 'Physics'},
+      {value: 'chemistry', label: 'Chemistry'},
+      {value: 'biology', label: 'Biology'},
+      {value: 'computer-science', label: 'Computer Science'}
     ]
   } finally {
     isLoadingDisciplines.value = false
@@ -91,14 +95,8 @@ const loadDisciplines = async () => {
 }
 
 
-
-const assignments: SelectOption[] = [
-  {value: 'assignment-1', label: 'Assignment 1: Basic Concepts'},
-  {value: 'assignment-2', label: 'Assignment 2: Advanced Topics'},
-  {value: 'assignment-3', label: 'Assignment 3: Research Project'},
-  {value: 'assignment-4', label: 'Assignment 4: Case Study'},
-  {value: 'assignment-5', label: 'Assignment 5: Final Project'}
-]
+const assignments = ref<SelectOption[]>([])
+const isLoadingAssignments = ref<boolean>(false)
 
 const rubrics: SelectOption[] = [
   {value: 'rubric-basic', label: 'Basic Evaluation Rubric'},
@@ -113,6 +111,40 @@ const completedSteps = ref<StepData[]>([])
 
 const firstSelectValue = ref<string | number | null>(null)
 const secondSelectValue = ref<string | number | null>(null)
+
+const loadAssignments = async (disciplineId: string) => {
+  try {
+    isLoadingAssignments.value = true
+    const response = await getAssignmentsByCourseId(disciplineId, getToken)
+    
+    assignments.value = response.map(assignment => ({
+      value: assignment.id,
+      label: assignment.name
+    }))
+    
+    console.log('Assignments loaded:', assignments.value)
+  } catch (error) {
+    console.error('Failed to load assignments:', error)
+    assignments.value = [
+      {value: 'assignment-1', label: 'Assignment 1: Basic Concepts'},
+      {value: 'assignment-2', label: 'Assignment 2: Advanced Topics'},
+      {value: 'assignment-3', label: 'Assignment 3: Research Project'},
+      {value: 'assignment-4', label: 'Assignment 4: Case Study'},
+      {value: 'assignment-5', label: 'Assignment 5: Final Project'}
+    ]
+  } finally {
+    isLoadingAssignments.value = false
+  }
+}
+
+// Watch for discipline selection to load assignments
+watch(firstSelectValue, (newValue) => {
+  if (newValue && currentStep.value === 1) {
+    loadAssignments(newValue as string)
+  }
+  // Reset second select when first select changes
+  secondSelectValue.value = null
+})
 
 const fileUploads = ref<FileUpload[]>([
   {id: '1', file: null, name: '', extractedText: '', isExtracting: false, extractionError: '', extractionProgress: 0}
@@ -146,8 +178,8 @@ const currentStepConfig = computed(() => {
         description: 'Pick the assignment type and evaluation rubric for your course.',
         firstSelect: {
           label: 'Assignment',
-          options: assignments,
-          placeholder: 'Choose an assignment...',
+          options: assignments.value,
+          placeholder: isLoadingAssignments.value ? 'Loading assignments...' : 'Choose an assignment...',
           icon: BookOpen
         },
         secondSelect: {
@@ -205,7 +237,6 @@ const isCompleted = computed(() => {
 })
 
 
-
 onMounted(() => {
   loadDisciplines()
 })
@@ -226,6 +257,7 @@ const handleNext = async () => {
       options: currentStepConfig.value.secondSelect.options
     }
   }
+  console.log(firstSelectValue.value)
 
   if (currentStep.value === 3) {
     stepData.files = [...fileUploads.value.filter(upload => upload.file !== null)]
@@ -552,7 +584,8 @@ const goToHome = () => {
               </div>
             </div>
 
-            <div v-if="currentStep !== 1" class="card" :class="{ 'selected': secondSelectValue, 'disabled': !firstSelectValue }">
+            <div v-if="currentStep !== 1" class="card"
+                 :class="{ 'selected': secondSelectValue, 'disabled': !firstSelectValue }">
               <div class="card-icon">
                 <component :is="currentStepConfig.secondSelect.icon" class="icon"/>
               </div>
