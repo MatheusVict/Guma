@@ -25,6 +25,11 @@ interface SelectOption {
   label: string
 }
 
+interface ApiSelectOption {
+  id: string
+  name: string
+}
+
 interface FileUpload {
   id: string
   file: File | null
@@ -51,7 +56,7 @@ interface StepData {
   files?: FileUpload[]
 }
 
-async function getAllDisciplinesEnrolled(accessToken: string): Promise<{ id: string, name: string }[]> {
+async function getAllDisciplinesEnrolled(accessToken: string): Promise<ApiSelectOption[]> {
   return await CanvasRequest.getAllDisciplinesEnrolled(accessToken);
 }
 
@@ -64,12 +69,12 @@ const loadDisciplines = async () => {
   try {
     isLoadingDisciplines.value = true
     const response = await getAllDisciplinesEnrolled(getToken)
-    
+
     disciplines.value = response.map(discipline => ({
       value: discipline.id,
       label: discipline.name
     }))
-    
+
     console.log('Disciplines loaded:', disciplines.value)
   } catch (error) {
     console.error('Failed to load disciplines:', error)
