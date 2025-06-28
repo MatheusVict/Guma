@@ -1,6 +1,0 @@
-This directory should contain:
-- ambient-sound.mp3
-- ambient-sound.ogg
-
-These files will provide the background ambient sound for the About page.
-See ABOUT_PAGE_SETUP.md for more details.

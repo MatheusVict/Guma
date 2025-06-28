@@ -22,7 +22,7 @@ interface StepData {
   }
 }
 
-// Sample data - you can replace this with your actual data
+
 const disciplines: SelectOption[] = [
   { value: 'math', label: 'Mathematics' },
   { value: 'physics', label: 'Physics' },
@@ -71,15 +71,11 @@ const rubrics: SelectOption[] = [
   { value: 'rubric-comprehensive', label: 'Comprehensive Evaluation Rubric' }
 ]
 
-// Component state
 const currentStep = ref<number>(1)
 const completedSteps = ref<StepData[]>([])
 
-// Current step selections
 const firstSelectValue = ref<string | number | null>(null)
 const secondSelectValue = ref<string | number | null>(null)
-
-// Computed properties for current step
 const currentStepConfig = computed(() => {
   switch (currentStep.value) {
     case 1:
@@ -141,16 +137,12 @@ const isCompleted = computed(() => {
   return currentStep.value > 3
 })
 
-// Watch for first select changes to reset second select
 watch(firstSelectValue, () => {
   secondSelectValue.value = null
 })
 
-// Methods
 const handleNext = () => {
   if (!canProceed.value) return
-
-  // Save current step data
   const stepData: StepData = {
     step: currentStep.value,
     firstSelect: {
@@ -167,10 +159,8 @@ const handleNext = () => {
 
   completedSteps.value.push(stepData)
 
-  // Move to next step
   currentStep.value++
 
-  // Reset selections for next step
   firstSelectValue.value = null
   secondSelectValue.value = null
 }

@@ -1,10 +1,27 @@
 <script setup>
+import { ref } from 'vue'
 import ButtonPrimary from "../components/buttons/ButtonPrimary.vue";
-  import {useRouter} from 'vue-router'
+import CanvasTokenModal from "./CanvasTokenModal.vue";
+import { useRouter } from 'vue-router'
 
-  const router = useRouter()
+const router = useRouter()
+const showModal = ref(false)
 
-  const goToApp = () => {
+const goToApp = () => {
+  const canvasToken = localStorage.getItem('canvastoken')
+  
+  if (!canvasToken) {
+    showModal.value = true
+  } else {
+    router.push('/app')
+  }
+}
+
+const closeModal = () => {
+  showModal.value = false
+}
+
+const onTokenSaved = () => {
   router.push('/app')
 }
 </script>
@@ -33,6 +50,13 @@ import ButtonPrimary from "../components/buttons/ButtonPrimary.vue";
         <ButtonPrimary text="Experimente Agora!" @click="goToApp"/>
       </div>
     </div>
+
+    <!-- Canvas Token Modal -->
+    <CanvasTokenModal 
+      v-if="showModal" 
+      @close="closeModal" 
+      @token-saved="onTokenSaved"
+    />
   </div>
 </template>
 

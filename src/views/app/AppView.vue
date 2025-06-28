@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import {ref, computed, watch, onMounted, nextTick} from 'vue'
 import {
   BookOpen,
   GraduationCap,
@@ -15,18 +15,30 @@ import {
 } from 'lucide-vue-next'
 import SelectInput from '../../components/SelectInput.vue'
 import ButtonPrimary from '../../components/buttons/ButtonPrimary.vue'
-import { useRouter } from 'vue-router'
-
+import {useRouter} from 'vue-router'
+import {extractTextFromPDF, isPDFFile} from '../../utils/pdfExtractor.js'
+import {CanvasRequest} from '../../services/api/routes/canvas'
+import {getCanvasToken} from '../../utils/get-from-localstorage'
 
 interface SelectOption {
   value: string | number
   label: string
 }
 
+interface ApiSelectOption {
+  id: string
+  name: string
+}
+
 interface FileUpload {
   id: string
   file: File | null
   name: string
+  extractedText?: string
+  isExtracting?: boolean
+  extractionError?: string
+  extractionProgress?: number
+  abortController?: AbortController
 }
 
 interface StepData {
@@ -41,93 +53,196 @@ interface StepData {
     label: string
     options: SelectOption[]
   }
+  thirdSelect?: {
+    value: string | number | null
+    label: string
+    options: SelectOption[]
+  }
   files?: FileUpload[]
 }
 
-// Sample data - you can replace this with your actual data
-const disciplines: SelectOption[] = [
-  { value: 'math', label: 'Mathematics' },
-  { value: 'physics', label: 'Physics' },
-  { value: 'chemistry', label: 'Chemistry' },
-  { value: 'biology', label: 'Biology' },
-  { value: 'computer-science', label: 'Computer Science' }
-]
-
-const professors: Record<string, SelectOption[]> = {
-  'math': [
-    { value: 'prof-smith', label: 'Prof. Smith' },
-    { value: 'prof-johnson', label: 'Prof. Johnson' },
-    { value: 'prof-williams', label: 'Prof. Williams' }
-  ],
-  'physics': [
-    { value: 'prof-brown', label: 'Prof. Brown' },
-    { value: 'prof-davis', label: 'Prof. Davis' }
-  ],
-  'chemistry': [
-    { value: 'prof-miller', label: 'Prof. Miller' },
-    { value: 'prof-wilson', label: 'Prof. Wilson' }
-  ],
-  'biology': [
-    { value: 'prof-moore', label: 'Prof. Moore' },
-    { value: 'prof-taylor', label: 'Prof. Taylor' }
-  ],
-  'computer-science': [
-    { value: 'prof-anderson', label: 'Prof. Anderson' },
-    { value: 'prof-thomas', label: 'Prof. Thomas' }
-  ]
+interface APIResponse {
+  rubric: Rubric[]
+}
+interface Rubric {
+  id: string
+  points: number
+  description: string
+  ratings: Rating[]
+  criterion_use_range: boolean
 }
 
-const assignments: SelectOption[] = [
-  { value: 'assignment-1', label: 'Assignment 1: Basic Concepts' },
-  { value: 'assignment-2', label: 'Assignment 2: Advanced Topics' },
-  { value: 'assignment-3', label: 'Assignment 3: Research Project' },
-  { value: 'assignment-4', label: 'Assignment 4: Case Study' },
-  { value: 'assignment-5', label: 'Assignment 5: Final Project' }
-]
+export interface Rating {
+  id: string
+  points: number
+  description: string
+  long_description: string
+}
 
-const rubrics: SelectOption[] = [
-  { value: 'rubric-basic', label: 'Basic Evaluation Rubric' },
-  { value: 'rubric-detailed', label: 'Detailed Assessment Rubric' },
-  { value: 'rubric-research', label: 'Research Project Rubric' },
-  { value: 'rubric-presentation', label: 'Presentation Rubric' },
-  { value: 'rubric-comprehensive', label: 'Comprehensive Evaluation Rubric' }
-]
+async function getAllDisciplinesEnrolled(accessToken: string): Promise<ApiSelectOption[]> {
+  return await CanvasRequest.getAllDisciplinesEnrolled(accessToken);
+}
 
-// Component state
+async function getAssignmentsByCourseId(courseId: string, accessToken: string): Promise<ApiSelectOption[]> {
+  return await CanvasRequest.getAssignmentsByCourseId(courseId, accessToken);
+}
+
+async function getAllRubricsFromAssignment(courseId: string, assignmentId: string, accessToken: string): Promise<APIResponse> {
+  console.log('rubrics called')
+  return await CanvasRequest.getAssignmentById(courseId, assignmentId, accessToken);
+}
+
+const getToken = getCanvasToken();
+
+const disciplines = ref<SelectOption[]>([])
+const professorStyles = ref<SelectOption[]>([
+  { value: 'interactive', label: 'Marcos' },
+  { value: 'analytical', label: 'Melina' },
+  { value: 'supportive', label: 'Rodrigo' },
+  { value: 'traditional', label: 'Vitor' },
+  { value: 'creative', label: 'Pablo' }
+])
+
+const isLoadingDisciplines = ref<boolean>(false)
+const loadDisciplines = async () => {
+  try {
+    isLoadingDisciplines.value = true
+    const response = await getAllDisciplinesEnrolled(getToken)
+
+    disciplines.value = response.map(discipline => ({
+      value: discipline.id,
+      label: discipline.name
+    }))
+
+    console.log('Disciplines loaded:', disciplines.value)
+  } catch (error) {
+    console.error('Failed to load disciplines:', error)
+    disciplines.value = [
+      {value: 'math', label: 'Mathematics'},
+      {value: 'physics', label: 'Physics'},
+      {value: 'chemistry', label: 'Chemistry'},
+      {value: 'biology', label: 'Biology'},
+      {value: 'computer-science', label: 'Computer Science'}
+    ]
+  } finally {
+    isLoadingDisciplines.value = false
+  }
+}
+
+
+const assignments = ref<SelectOption[]>([])
+const isLoadingAssignments = ref<boolean>(false)
+
+const rubrics = ref<SelectOption[]>([])
+const isLoadingRubrics = ref<boolean>(false)
+
 const currentStep = ref<number>(1)
 const completedSteps = ref<StepData[]>([])
 
-// Current step selections
 const firstSelectValue = ref<string | number | null>(null)
 const secondSelectValue = ref<string | number | null>(null)
+const thirdSelectValue = ref<string | number | null>(null)
 
-// File uploads for step 3
+const loadAssignments = async (disciplineId: string) => {
+  try {
+    isLoadingAssignments.value = true
+    const response = await getAssignmentsByCourseId(disciplineId, getToken)
+
+    assignments.value = response.map(assignment => ({
+      value: assignment.id,
+      label: assignment.name
+    }))
+
+    console.log('Assignments loaded:', assignments.value)
+  } catch (error) {
+    console.error('Failed to load assignments:', error)
+    assignments.value = [
+      {value: 'assignment-1', label: 'Assignment 1: Basic Concepts'},
+      {value: 'assignment-2', label: 'Assignment 2: Advanced Topics'},
+      {value: 'assignment-3', label: 'Assignment 3: Research Project'},
+      {value: 'assignment-4', label: 'Assignment 4: Case Study'},
+      {value: 'assignment-5', label: 'Assignment 5: Final Project'}
+    ]
+  } finally {
+    isLoadingAssignments.value = false
+  }
+}
+
+const loadRubrics = async (courseId: string, assignmentId: string) => {
+  try {
+    isLoadingRubrics.value = true
+    const response = await getAllRubricsFromAssignment(courseId, assignmentId, getToken)
+
+    rubrics.value = response.rubric.map(rubric => ({
+      value: assignmentId,
+      label: rubric.description
+    }))
+
+    console.log('Rubrics loaded:', rubrics.value)
+  } catch (error) {
+    console.error('Failed to load rubrics:', error)
+    rubrics.value = [
+      {value: assignmentId, label: 'Basic Evaluation Rubric'},
+      {value: assignmentId, label: 'Detailed Assessment Rubric'},
+      {value: assignmentId, label: 'Research Project Rubric'},
+      {value: assignmentId, label: 'Presentation Rubric'},
+      {value: assignmentId, label: 'Comprehensive Evaluation Rubric'}
+    ]
+  } finally {
+    isLoadingRubrics.value = false
+  }
+}
+
+
+watch(firstSelectValue, (newValue) => {
+  if (newValue && currentStep.value === 1) {
+    loadAssignments(newValue as string)
+  }
+
+  secondSelectValue.value = null
+  thirdSelectValue.value = null
+
+
+  if (newValue && currentStep.value === 2) {
+
+    const disciplineId = completedSteps.value.find(step => step.step === 1)?.firstSelect.value as string
+    if (disciplineId) {
+      loadRubrics(disciplineId, newValue as string)
+    }
+  }
+})
+
+
+watch(secondSelectValue, (newValue) => {
+
+  thirdSelectValue.value = null
+})
+
 const fileUploads = ref<FileUpload[]>([
-  { id: '1', file: null, name: '' }
+  {id: '1', file: null, name: '', extractedText: '', isExtracting: false, extractionError: '', extractionProgress: 0}
 ])
 
-// AI Response state
 const showAIResponse = ref<boolean>(false)
 const aiResponse = ref<string>('')
 const isLoadingAI = ref<boolean>(false)
-
-// Computed properties for current step
+const isStreamingAI = ref<boolean>(false)
+const streamAbortController = ref<AbortController | null>(null)
 const currentStepConfig = computed(() => {
   switch (currentStep.value) {
     case 1:
       return {
         title: 'Select Discipline and Professor',
-        description: 'Choose your academic discipline and preferred professor to get started.',
+        description: 'Choose your academic discipline and teaching style to get started.',
         firstSelect: {
           label: 'Disciplina',
-          options: disciplines,
-          placeholder: 'Choose a discipline...',
+          options: disciplines.value,
+          placeholder: isLoadingDisciplines.value ? 'Loading disciplines...' : 'Choose a discipline...',
           icon: BookOpen
         },
         secondSelect: {
-          label: 'Estilo do Professor',
-          options: firstSelectValue.value ? professors[firstSelectValue.value as string] || [] : [],
-          placeholder: 'Choose a professor...',
+          label: 'Professor Style',
+          options: professorStyles.value,
+          placeholder: 'Choose your teaching style...',
           icon: GraduationCap
         }
       }
@@ -137,21 +252,21 @@ const currentStepConfig = computed(() => {
         description: 'Pick the assignment type and evaluation rubric for your course.',
         firstSelect: {
           label: 'Assignment',
-          options: assignments,
-          placeholder: 'Choose an assignment...',
+          options: assignments.value,
+          placeholder: isLoadingAssignments.value ? 'Loading assignments...' : 'Choose an assignment...',
           icon: BookOpen
         },
         secondSelect: {
           label: 'Rubric',
-          options: rubrics,
-          placeholder: 'Choose a rubric...',
+          options: rubrics.value,
+          placeholder: isLoadingRubrics.value ? 'Loading rubrics...' : 'Choose a rubric...',
           icon: GraduationCap
         }
       }
     case 3:
       return {
-        title: 'Upload Files',
-        description: 'Upload your documents and files to complete the setup.',
+        title: 'Upload PDF Files',
+        description: 'Upload your PDF documents to extract text and complete the setup.',
         firstSelect: {
           label: '',
           options: [],
@@ -169,16 +284,27 @@ const currentStepConfig = computed(() => {
       return {
         title: 'Completed!',
         description: 'Your setup is complete and ready to use.',
-        firstSelect: { label: '', options: [], placeholder: '', icon: BookOpen },
-        secondSelect: { label: '', options: [], placeholder: '', icon: GraduationCap }
+        firstSelect: {label: '', options: [], placeholder: '', icon: BookOpen},
+        secondSelect: {label: '', options: [], placeholder: '', icon: GraduationCap}
       }
   }
 })
 
 const canProceed = computed(() => {
   if (currentStep.value === 3) {
-    // For step 3, check if at least one file is uploaded
-    return fileUploads.value.some(upload => upload.file !== null)
+    return fileUploads.value.some(upload =>
+      upload.file !== null &&
+      upload.extractedText &&
+      upload.extractedText.length > 0 &&
+      !upload.isExtracting &&
+      !upload.extractionError
+    )
+  }
+  if (currentStep.value === 1) {
+    return firstSelectValue.value !== null && secondSelectValue.value !== null
+  }
+  if (currentStep.value === 2) {
+    return firstSelectValue.value !== null && secondSelectValue.value !== null
   }
   return firstSelectValue.value !== null && secondSelectValue.value !== null
 })
@@ -187,16 +313,14 @@ const isCompleted = computed(() => {
   return currentStep.value > 3
 })
 
-// Watch for first select changes to reset second select
-watch(firstSelectValue, () => {
-  secondSelectValue.value = null
+
+onMounted(() => {
+  loadDisciplines()
 })
 
-// Methods
 const handleNext = async () => {
   if (!canProceed.value) return
 
-  // Save current step data
   const stepData: StepData = {
     step: currentStep.value,
     firstSelect: {
@@ -210,101 +334,166 @@ const handleNext = async () => {
       options: currentStepConfig.value.secondSelect.options
     }
   }
+  console.log(firstSelectValue.value)
 
-  // For step 3, save file uploads instead of select values
   if (currentStep.value === 3) {
     stepData.files = [...fileUploads.value.filter(upload => upload.file !== null)]
-    stepData.firstSelect = { value: 'files', label: 'Files Uploaded', options: [] }
-    stepData.secondSelect = { value: 'files', label: `${stepData.files.length} file(s)`, options: [] }
+    stepData.firstSelect = {value: 'files', label: 'Files Uploaded', options: []}
+    stepData.secondSelect = {value: 'files', label: `${stepData.files.length} file(s)`, options: []}
   }
 
   completedSteps.value.push(stepData)
 
-  // If completing step 3, make API call and show AI response
   if (currentStep.value === 3) {
     await makeCompletionAPICall()
   }
 
-  // Move to next step
   currentStep.value++
 
-  // Reset selections for next step
   firstSelectValue.value = null
   secondSelectValue.value = null
+  thirdSelectValue.value = null
 
-  // Reset file uploads for next time
   if (currentStep.value > 3) {
-    fileUploads.value = [{ id: '1', file: null, name: '' }]
+    fileUploads.value = [{id: '1', file: null, name: '', extractedText: '', isExtracting: false, extractionError: ''}]
   }
 }
 
 const getOptionLabel = (options: SelectOption[], value: string | number): string => {
-  const option = options.find(opt => opt.value === value)
+  const option = options.find(opt => opt.value == value)
   return option ? option.label : String(value)
 }
 
 const resetProcess = () => {
+  fileUploads.value.forEach(upload => {
+    if (upload.abortController) {
+      upload.abortController.abort()
+    }
+  })
+
   currentStep.value = 1
   completedSteps.value = []
   firstSelectValue.value = null
   secondSelectValue.value = null
-  fileUploads.value = [{ id: '1', file: null, name: '' }]
+  thirdSelectValue.value = null
+  fileUploads.value = [{
+    id: '1',
+    file: null,
+    name: '',
+    extractedText: '',
+    isExtracting: false,
+    extractionError: '',
+    extractionProgress: 0
+  }]
 }
 
-// File upload methods
-const handleFileChange = (uploadId: string, event: Event) => {
+const handleFileChange = async (uploadId: string, event: Event) => {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0] || null
 
   const uploadIndex = fileUploads.value.findIndex(upload => upload.id === uploadId)
   if (uploadIndex !== -1) {
+    if (fileUploads.value[uploadIndex].abortController) {
+      fileUploads.value[uploadIndex].abortController.abort();
+    }
+
     fileUploads.value[uploadIndex].file = file
     fileUploads.value[uploadIndex].name = file?.name || ''
+    fileUploads.value[uploadIndex].extractedText = ''
+    fileUploads.value[uploadIndex].isExtracting = false
+    fileUploads.value[uploadIndex].extractionError = ''
+    fileUploads.value[uploadIndex].extractionProgress = 0
 
-    // If this is the last upload and a file was selected, add a new empty upload
+    if (file && isPDFFile(file)) {
+      fileUploads.value[uploadIndex].isExtracting = true
+
+      const abortController = new AbortController();
+      fileUploads.value[uploadIndex].abortController = abortController;
+
+      try {
+        const extractedText = await extractTextFromPDF(
+          file,
+          (progress) => {
+            fileUploads.value[uploadIndex].extractionProgress = progress;
+          },
+          abortController
+        );
+
+        fileUploads.value[uploadIndex].extractedText = extractedText;
+        fileUploads.value[uploadIndex].isExtracting = false;
+
+        console.log(`Extracted text from ${file.name}:`, extractedText.substring(0, 200) + '...');
+      } catch (error) {
+        fileUploads.value[uploadIndex].isExtracting = false;
+        fileUploads.value[uploadIndex].extractionError = error.message || 'Failed to extract text from PDF';
+        console.error('PDF text extraction failed:', error);
+      } finally {
+        fileUploads.value[uploadIndex].abortController = undefined;
+      }
+    }
+
     if (uploadIndex === fileUploads.value.length - 1 && file) {
-      addFileUpload()
+      addFileUpload();
     }
   }
 }
 
 const addFileUpload = () => {
   const newId = (fileUploads.value.length + 1).toString()
-  fileUploads.value.push({ id: newId, file: null, name: '' })
+  fileUploads.value.push({
+    id: newId,
+    file: null,
+    name: '',
+    extractedText: '',
+    isExtracting: false,
+    extractionError: '',
+    extractionProgress: 0
+  })
 }
 
 const removeFileUpload = (uploadId: string) => {
   if (fileUploads.value.length > 1) {
+    cancelExtraction(uploadId);
     fileUploads.value = fileUploads.value.filter(upload => upload.id !== uploadId)
   }
 }
 
-// AI Response functions
+const cancelExtraction = (uploadId: string) => {
+  const uploadIndex = fileUploads.value.findIndex(upload => upload.id === uploadId)
+  if (uploadIndex !== -1 && fileUploads.value[uploadIndex].abortController) {
+    fileUploads.value[uploadIndex].abortController.abort()
+
+    fileUploads.value[uploadIndex].isExtracting = false
+    fileUploads.value[uploadIndex].extractionError = 'Extraction cancelled by user'
+
+    console.log(`Cancelled extraction for file: ${fileUploads.value[uploadIndex].name}`)
+  }
+}
+
 const toggleAIResponse = async () => {
-  // Only allow toggle if steps are completed
-  if (!isCompleted.value) return
-  
+  console.log('form', getCurrentFormData())
+  if (currentStep.value <= 3) return
+
   showAIResponse.value = !showAIResponse.value
   if (showAIResponse.value) {
     if (!aiResponse.value) {
       await generateAIResponse()
     }
-    // Scroll to AI response area when showing
     await scrollToAIResponse()
   }
 }
 
 const generateAIResponse = async () => {
+  console.log('ai response')
   isLoadingAI.value = true
   aiResponse.value = ''
-  
-  // Simulate API call delay
+
   await new Promise(resolve => setTimeout(resolve, 2000))
-  
-  // Fake AI response based on current data
+
   const currentData = getCurrentFormData()
+  console.log('currentData', currentData)
   aiResponse.value = generateFakeAIResponse(currentData)
-  
+
   isLoadingAI.value = false
 }
 
@@ -328,14 +517,14 @@ Here are some suggestions for your next steps:
 • Consider creating interactive exercises that align with your chosen teaching style
 • Develop assessment rubrics that match your academic standards
 • Create multimedia content to enhance student engagement`,
-    
+
     `I notice you're currently on step ${data.currentStep}. The configuration you've chosen so far shows a well-structured approach to academic content creation.
 
 Recommendations:
 • Your discipline selection provides a solid foundation for targeted content
 • The professor style you've chosen will help personalize the learning experience
 • Consider adding supplementary materials to enhance comprehension`,
-    
+
     `Your uploaded files ${data.files.length > 0 ? `(${data.files.length} file${data.files.length > 1 ? 's' : ''})` : ''} will be processed to create personalized educational content that matches your teaching style and academic requirements.
 
 Next steps:
@@ -343,62 +532,138 @@ Next steps:
 • Create customized exercises based on your materials
 • Generate assessment tools aligned with your rubric preferences`,
   ]
-  
+
   return responses[Math.floor(Math.random() * responses.length)]
 }
 
-const makeCompletionAPICall = async () => {
-  isLoadingAI.value = true
-  showAIResponse.value = true
-  
-  // Simulate API call with all collected data
-  const allData = {
-    completedSteps: completedSteps.value,
-    totalSteps: 3,
-    timestamp: new Date().toISOString()
+const cancelStream = () => {
+  if (streamAbortController.value) {
+    streamAbortController.value.abort()
+    streamAbortController.value = null
+    isStreamingAI.value = false
+    isLoadingAI.value = false
+    console.log('Stream cancelled by user')
   }
-  
-  console.log('Making API call with data:', allData)
-  
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 3000))
-  
-  // Generate completion response
-  aiResponse.value = `🎉 Excellent! Your Guma Agent setup is now complete and I've processed all your information.
+}
 
-Based on your configuration:
-${completedSteps.value.map((step, index) => 
-  `• Step ${step.step}: ${step.firstSelect.label} → ${step.secondSelect.label}`
-).join('\n')}
+const makeCompletionAPICall = async () => {
+  cancelStream()
 
-I'm now ready to help you create amazing educational content! Here's what I can do for you:
+  isLoadingAI.value = true
+  isStreamingAI.value = false
+  showAIResponse.value = true
+  aiResponse.value = ''
 
-📚 **Content Generation**: Create lesson plans, exercises, and study materials tailored to your discipline and teaching style.
-
-📝 **Assessment Tools**: Generate quizzes, assignments, and rubrics that align with your academic standards.
-
-🎯 **Personalized Learning**: Adapt content difficulty and presentation style based on your professor preferences.
-
-📊 **Progress Tracking**: Monitor student engagement and learning outcomes with detailed analytics.
-
-Your educational content creation journey starts now! I'll use all the information you've provided to deliver the most relevant and effective materials for your students.`
-  
-  isLoadingAI.value = false
-  
-  // Smooth scroll to AI response area after response is ready
+  streamAbortController.value = new AbortController()
   await scrollToAIResponse()
+
+  try {
+    const courseId = completedSteps.value.find(step => step.step === 1)?.firstSelect.value as string
+    const assignmentId = completedSteps.value.find(step => step.step === 2)?.firstSelect.value as string
+    
+    if (!courseId || !assignmentId) {
+      throw new Error('Missing courseId or assignmentId from completed steps')
+    }
+
+    const body = {
+      subject: completedSteps.value.find(step => step.step === 1)?.firstSelect.label || '',
+      professor: completedSteps.value.find(step => step.step === 1)?.secondSelect.label || '',
+      content: completedSteps.value.find(step => step.step === 2)?.firstSelect.label || '',
+      files: completedSteps.value.find(step => step.step === 3)?.files?.map(file => ({
+        name: file.name,
+        content: file.extractedText || ''
+      })) || []
+    }
+
+    console.log('Making streaming API call with data:', { courseId, assignmentId, body })
+
+    const accessToken = getCanvasToken()
+    if (!accessToken) {
+      throw new Error('No access token found')
+    }
+
+    const response = await CanvasRequest.chatWithAI(courseId, assignmentId, body, accessToken, streamAbortController.value)
+    
+    isLoadingAI.value = false
+    isStreamingAI.value = true
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let partialResponse = ""
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        
+        if (done) {
+          console.log('Stream finished')
+          break
+        }
+
+        const chunk = decoder.decode(value, { stream: true })
+        partialResponse += chunk
+        const lines = partialResponse.split("\n")
+        
+        for (let i = 0; i < lines.length - 1; i++) {
+          const line = lines[i].trim()
+          if (line.startsWith("data:")) {
+            try {
+              const jsonText = line.replace(/^data:/, '').trim()
+              if (jsonText === '[DONE]') {
+                console.log('Stream completed with [DONE] marker')
+                break
+              }
+              const parsedResponse = JSON.parse(jsonText)
+              if (parsedResponse.content) {
+                aiResponse.value += parsedResponse.content
+                
+                await nextTick()
+                await scrollToAIResponse()
+              }
+            } catch (error) {
+              console.error("Error processing JSON:", error, "Line:", line)
+            }
+          }
+        }
+        
+        partialResponse = lines[lines.length - 1]
+      }
+    } catch (streamError) {
+      console.error('Stream reading error:', streamError)
+      throw streamError
+    } finally {
+      reader.releaseLock()
+    }
+
+  } catch (error) {
+    console.error('Error making API call:', error)
+    aiResponse.value = `Error: ${error.message}`
+  } finally {
+    isLoadingAI.value = false
+    isStreamingAI.value = false
+    await scrollToAIResponse()
+  }
 }
 
 const scrollToAIResponse = async () => {
-  // Wait a bit for DOM to update
-  await new Promise(resolve => setTimeout(resolve, 100))
-  
+  await new Promise(resolve => setTimeout(resolve, 50))
+
   const aiResponseElement = document.querySelector('.ai-response-area')
   if (aiResponseElement) {
-    aiResponseElement.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    })
+    if (isStreamingAI.value) {
+      const responseTextElement = aiResponseElement.querySelector('.ai-response-text')
+      if (responseTextElement) {
+        responseTextElement.scrollTop = responseTextElement.scrollHeight
+      }
+      aiResponseElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      })
+    } else {
+      aiResponseElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      })
+    }
   }
 }
 
@@ -406,44 +671,41 @@ const router = useRouter();
 const goToHome = () => {
   router.push('/')
 }
+
+
 </script>
 
 <template>
   <div class="guma-agent">
-    <!-- Background pattern -->
     <div class="background-pattern"></div>
-
-    <!-- Left Sidebar -->
     <div class="sidebar">
       <div class="sidebar-icons">
         <button class="sidebar-btn" :class="{ active: currentStep === 1 }">
-          <Settings class="icon" />
+          <Settings class="icon"/>
         </button>
-        <button class="sidebar-btn" :class="{ active: showAIResponse, disabled: !isCompleted }" @click="toggleAIResponse">
-          <Menu class="icon" />
+        <button class="sidebar-btn" :class="{ active: showAIResponse, disabled: currentStep <= 3 }"
+                @click="toggleAIResponse">
+          <Menu class="icon"/>
         </button>
         <button class="sidebar-btn" @click="goToHome">
-          <Home class="icon" />
+          <Home class="icon"/>
         </button>
       </div>
     </div>
 
-    <!-- Main Content -->
     <div class="main-content">
-      <!-- Header -->
       <header class="header">
         <div class="logo-section">
           <div class="mascot">
-            <img src="../../assets/img/guma.svg" alt="Guma Agent Mascot" class="mascot-image" />
+            <img src="../../assets/img/guma.svg" alt="Guma Agent Mascot" class="mascot-image"/>
           </div>
           <h1 class="title">Guma Agent</h1>
         </div>
         <button class="help-btn">
-          <HelpCircle class="icon" />
+          <HelpCircle class="icon"/>
         </button>
       </header>
 
-      <!-- Progress indicator -->
       <div class="progress-indicator">
         <div
           v-for="step in 3"
@@ -454,30 +716,27 @@ const goToHome = () => {
             'completed': step < currentStep
           }"
         >
-          <CheckCircle v-if="step < currentStep" class="icon" />
+          <CheckCircle v-if="step < currentStep" class="icon"/>
           <span v-else>{{ step }}</span>
         </div>
       </div>
 
-      <!-- Content Section -->
       <div class="content-section">
-        <!-- Current step or completion -->
         <div v-if="!isCompleted" class="step-container">
           <h2 class="step-title">{{ currentStepConfig.title }}</h2>
           <p class="description">
             {{ currentStepConfig.description }}
           </p>
 
-          <!-- Cards Section for Steps 1 & 2 -->
           <div v-if="currentStep !== 3" class="cards-container">
             <div class="card" :class="{ 'selected': firstSelectValue }">
               <div class="card-icon">
-                <component :is="currentStepConfig.firstSelect.icon" class="icon" />
+                <component :is="currentStepConfig.firstSelect.icon" class="icon"/>
               </div>
               <div class="card-content">
                 <div class="card-header">
                   <span class="card-label">{{ currentStepConfig.firstSelect.label }}</span>
-                  <ChevronRight class="arrow-icon" />
+                  <ChevronRight class="arrow-icon"/>
                 </div>
                 <div class="select-container">
                   <SelectInput
@@ -489,28 +748,28 @@ const goToHome = () => {
               </div>
             </div>
 
-            <div class="card" :class="{ 'selected': secondSelectValue, 'disabled': !firstSelectValue }">
+            <div class="card"
+                 :class="{ 'selected': secondSelectValue, 'disabled': currentStep === 2 && !firstSelectValue }">
               <div class="card-icon">
-                <component :is="currentStepConfig.secondSelect.icon" class="icon" />
+                <component :is="currentStepConfig.secondSelect.icon" class="icon"/>
               </div>
               <div class="card-content">
                 <div class="card-header">
                   <span class="card-label">{{ currentStepConfig.secondSelect.label }}</span>
-                  <ChevronRight class="arrow-icon" />
+                  <ChevronRight class="arrow-icon"/>
                 </div>
                 <div class="select-container">
                   <SelectInput
                     v-model="secondSelectValue"
                     :options="currentStepConfig.secondSelect.options"
                     :placeholder="currentStepConfig.secondSelect.placeholder"
-                    :disabled="!firstSelectValue"
+                    :disabled="currentStep === 2 && !firstSelectValue"
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- File Upload Section for Step 3 -->
           <div v-else class="file-upload-container">
             <div
               v-for="upload in fileUploads"
@@ -519,12 +778,12 @@ const goToHome = () => {
               :class="{ 'has-file': upload.file }"
             >
               <div class="file-card-icon">
-                <Upload class="icon" />
+                <Upload class="icon"/>
               </div>
               <div class="file-card-content">
                 <div class="file-card-header">
                   <span class="file-card-label">
-                    {{ upload.file ? upload.name : 'Choose file...' }}
+                    {{ upload.file ? upload.name : 'Choose PDF file...' }}
                   </span>
                   <button
                     v-if="fileUploads.length > 1 && !upload.file"
@@ -532,8 +791,40 @@ const goToHome = () => {
                     class="remove-btn"
                     type="button"
                   >
-                    <X class="icon" />
+                    <X class="icon"/>
                   </button>
+                </div>
+
+                <div v-if="upload.file" class="extraction-status">
+                  <div v-if="upload.isExtracting" class="extraction-loading">
+                    <div class="loading-spinner"></div>
+                    <div class="extraction-progress">
+                      <div class="progress-bar">
+                        <div class="progress-fill" :style="{ width: `${upload.extractionProgress}%` }"></div>
+                      </div>
+                      <span>Extracting text from PDF... {{ upload.extractionProgress }}%</span>
+                      <button
+                        @click="cancelExtraction(upload.id)"
+                        class="cancel-btn"
+                        type="button"
+                      >
+                        <X class="icon"/>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                  <div v-else-if="upload.extractionError" class="extraction-error">
+                    <span>❌ {{ upload.extractionError }}</span>
+                  </div>
+                  <div v-else-if="upload.extractedText" class="extraction-success">
+                    <span>✅ Text extracted successfully ({{ upload.extractedText.length }} characters)</span>
+                    <details class="extracted-text-preview">
+                      <summary>Preview extracted text</summary>
+                      <div class="text-preview">
+                        {{ upload.extractedText.substring(0, 500) }}{{ upload.extractedText.length > 500 ? '...' : '' }}
+                      </div>
+                    </details>
+                  </div>
                 </div>
                 <div class="file-input-container">
                   <input
@@ -541,31 +832,29 @@ const goToHome = () => {
                     :id="`file-${upload.id}`"
                     @change="handleFileChange(upload.id, $event)"
                     class="file-input"
-                    accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                    accept=".pdf"
                   />
                   <label
                     :for="`file-${upload.id}`"
                     class="file-input-label"
                   >
-                    <Upload class="icon" />
-                    {{ upload.file ? 'Change file' : 'Select file' }}
+                    <Upload class="icon"/>
+                    {{ upload.file ? 'Change PDF' : 'Select PDF file' }}
                   </label>
                 </div>
               </div>
             </div>
 
-            <!-- Add more files button -->
             <button
               @click="addFileUpload"
               class="add-file-btn"
               type="button"
             >
-              <Plus class="icon" />
-              Add another file
+              <Plus class="icon"/>
+              Add another PDF
             </button>
           </div>
 
-          <!-- Next Button -->
           <div class="button-container">
             <ButtonPrimary
               :text="currentStep === 3 ? 'Complete' : 'Next'"
@@ -575,10 +864,9 @@ const goToHome = () => {
           </div>
         </div>
 
-        <!-- Completion summary -->
         <div v-else class="completion-container">
           <div class="completion-icon">
-            <CheckCircle class="icon" />
+            <CheckCircle class="icon"/>
           </div>
           <h2 class="completion-title">Setup Complete!</h2>
           <p class="completion-description">
@@ -613,7 +901,6 @@ const goToHome = () => {
           </div>
         </div>
 
-        <!-- Previous selections display -->
         <div v-if="completedSteps.length > 0 && !isCompleted" class="previous-selections">
           <h3>Previous Selections:</h3>
           <div v-for="step in completedSteps" :key="step.step" class="previous-step">
@@ -622,23 +909,31 @@ const goToHome = () => {
           </div>
         </div>
 
-        <!-- AI Response Area -->
-        <div v-if="showAIResponse && isCompleted" class="ai-response-area">
+        <div v-if="showAIResponse" class="ai-response-area">
           <div class="ai-response-header">
             <div class="ai-avatar">
-              <img src="../../assets/img/guma.svg" alt="Guma AI" class="ai-avatar-image" />
+              <img src="../../assets/img/guma.svg" alt="Guma AI" class="ai-avatar-image"/>
             </div>
             <h3>Guma AI Response</h3>
           </div>
-          
+
           <div class="ai-response-content">
             <div v-if="isLoadingAI" class="loading-state">
               <div class="loading-spinner"></div>
               <p>Guma is analyzing your data and generating response...</p>
             </div>
-            
+
+            <div v-else-if="aiResponse || isStreamingAI" class="ai-text-area">
+              <div class="ai-response-text">{{ aiResponse }}</div>
+              <div v-if="isStreamingAI" class="typing-indicator">
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+              </div>
+            </div>
+
             <div v-else class="ai-text-area">
-              <pre>{{ aiResponse || 'Click the menu button to get AI insights about your current setup!' }}</pre>
+              <pre>Click the menu button to get AI insights about your current setup!</pre>
             </div>
           </div>
         </div>

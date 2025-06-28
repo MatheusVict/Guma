@@ -23,7 +23,7 @@
     >
       <ul class="menu-list">
         <li class="menu-item">
-          <router-link to="#hero" @click="closeMenu" class="menu-link">
+          <router-link to="/" @click="closeMenu" class="menu-link">
             Home
           </router-link>
         </li>
@@ -119,7 +119,7 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('keydown', handleKeyDown)
-  toggleBodyScroll(false) // Ensure body scroll is restored
+  toggleBodyScroll(false)
 })
 </script>
 

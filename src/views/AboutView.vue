@@ -2,9 +2,9 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import HamburgerMenu from '@/views/Home/components/HamburgerMenu.vue'
 
-import maraya from '../../public/maraya.png'
-import mrpunk from '../../public/mrpunkk.png'
-import matheus from '../../public/matheus.png'
+import maraya from '../../public/imgs/maraya.png'
+import mrpunk from '../../public/imgs/mrpunkk.png'
+import matheus from '../../public/imgs/matheus.png'
 
 const teamMembers = ref([
   {
@@ -42,8 +42,8 @@ onMounted(() => {
 <template>
   <main class="about-page">
     <audio autoplay loop preload="auto" style="display: none;">
-      <source src="/ambient-sound.mp3" type="audio/mpeg">
-      <source src="/ambient-sound.ogg" type="audio/ogg">
+      <source src="/audios/ambient-sound.mp3" type="audio/mpeg">
+      <source src="/audios/ambient-sound.ogg" type="audio/ogg">
       Your browser does not support the audio element.
     </audio>
 

@@ -29,5 +29,5 @@ import {WHY_DO_YOU_NEED} from "@/store/whyDoYouNeed.js";
 </template>
 
 <style scoped lang="scss">
-@import "../../../assets/styles/components/whyDoyouNeed/whyDoYouNeed";
+@import "../../../assets/styles/components/why-do-you-need/whyDoYouNeed";
 </style>
