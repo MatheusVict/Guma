@@ -538,38 +538,81 @@ Next steps:
 const makeCompletionAPICall = async () => {
   isLoadingAI.value = true
   showAIResponse.value = true
+  aiResponse.value = '' // Clear previous response
 
-  const allData = {
-    completedSteps: completedSteps.value,
-    totalSteps: 3,
-    timestamp: new Date().toISOString()
+  try {
+    // Extract courseId from step 1 (discipline) and assignmentId from step 2 (assignment)
+    const courseId = completedSteps.value.find(step => step.step === 1)?.firstSelect.value as string
+    const assignmentId = completedSteps.value.find(step => step.step === 2)?.firstSelect.value as string
+    
+    if (!courseId || !assignmentId) {
+      throw new Error('Missing courseId or assignmentId from completed steps')
+    }
+
+    // Prepare the body with the selected values
+    const body = {
+      subject: completedSteps.value.find(step => step.step === 1)?.firstSelect.label || '',
+      professor: completedSteps.value.find(step => step.step === 1)?.secondSelect.label || '',
+      content: completedSteps.value.find(step => step.step === 2)?.firstSelect.label || '',
+      // Add any file content if available
+      files: completedSteps.value.find(step => step.step === 3)?.files?.map(file => ({
+        name: file.name,
+        content: file.extractedText || ''
+      })) || []
+    }
+
+    console.log('Making streaming API call with data:', { courseId, assignmentId, body })
+
+    const accessToken = getCanvasToken()
+    if (!accessToken) {
+      throw new Error('No access token found')
+    }
+
+    const response = await CanvasRequest.chatWithAI(courseId, assignmentId, body, accessToken)
+    
+    // Handle streaming response with fetch
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let partialResponse = ""
+
+    while (true) {
+      const { done, value } = await reader.read()
+      
+      if (done) {
+        console.log('Stream finished')
+        break
+      }
+
+      const chunk = decoder.decode(value)
+      partialResponse += chunk
+      const lines = partialResponse.split("\n")
+      
+      for (let i = 0; i < lines.length - 1; i++) {
+        const line = lines[i].trim()
+        if (line.startsWith("data:")) {
+          try {
+            const jsonText = line.replace(/^data:/, '').trim()
+            const parsedResponse = JSON.parse(jsonText)
+            aiResponse.value += parsedResponse.content
+            
+            // Auto-scroll to show new content as it streams
+            await scrollToAIResponse()
+          } catch (error) {
+            console.error("Error processing JSON:", error)
+          }
+        }
+      }
+      
+      partialResponse = lines[lines.length - 1]
+    }
+
+  } catch (error) {
+    console.error('Error making API call:', error)
+    aiResponse.value = `Error: ${error.message}`
+  } finally {
+    isLoadingAI.value = false
+    await scrollToAIResponse()
   }
-
-  console.log('Making API call with data:', allData)
-
-  await new Promise(resolve => setTimeout(resolve, 3000))
-  aiResponse.value = `🎉 Excellent! Your Guma Agent setup is now complete and I've processed all your information.
-
-Based on your configuration:
-${completedSteps.value.map((step, index) =>
-    `• Step ${step.step}: ${step.firstSelect.label} → ${step.secondSelect.label}`
-  ).join('\n')}
-
-I'm now ready to help you create amazing educational content! Here's what I can do for you:
-
-📚 **Content Generation**: Create lesson plans, exercises, and study materials tailored to your discipline and teaching style.
-
-📝 **Assessment Tools**: Generate quizzes, assignments, and rubrics that align with your academic standards.
-
-🎯 **Personalized Learning**: Adapt content difficulty and presentation style based on your professor preferences.
-
-📊 **Progress Tracking**: Monitor student engagement and learning outcomes with detailed analytics.
-
-Your educational content creation journey starts now! I'll use all the information you've provided to deliver the most relevant and effective materials for your students.`
-
-  isLoadingAI.value = false
-
-  await scrollToAIResponse()
 }
 
 const scrollToAIResponse = async () => {

@@ -37,4 +37,23 @@ export class CanvasRequest {
     if (response.code === 401 || response.code === 403) throw new Error('Unauthorized');
     return response.data;
   }
+
+  static async chatWithAI(courseId, assignmentId, body, accessToken) {
+    // Use fetch for streaming since axios doesn't handle SSE well in browsers
+    const response = await fetch(`${api.defaults.baseURL}/chat?courseId=${courseId}&assignmentId=${assignmentId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+        'access_token': accessToken
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP Error! status: ${response.status}`);
+    }
+
+    return response;
+  }
 }
