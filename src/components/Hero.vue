@@ -8,14 +8,11 @@ const router = useRouter()
 const showModal = ref(false)
 
 const goToApp = () => {
-  // Check if canvas token exists in localStorage
   const canvasToken = localStorage.getItem('canvastoken')
   
   if (!canvasToken) {
-    // Show modal if token doesn't exist
     showModal.value = true
   } else {
-    // Navigate to app if token exists
     router.push('/app')
   }
 }
@@ -25,7 +22,6 @@ const closeModal = () => {
 }
 
 const onTokenSaved = () => {
-  // Navigate to app after token is saved
   router.push('/app')
 }
 </script>

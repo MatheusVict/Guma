@@ -174,7 +174,7 @@ const loadRubrics = async (courseId: string, assignmentId: string) => {
     const response = await getAllRubricsFromAssignment(courseId, assignmentId, getToken)
 
     rubrics.value = response.rubric.map(rubric => ({
-      value: assignmentId, // Use assignment ID as value as requested
+      value: assignmentId,
       label: rubric.description
     }))
 
@@ -193,18 +193,18 @@ const loadRubrics = async (courseId: string, assignmentId: string) => {
   }
 }
 
-// Watch for discipline selection to load assignments
+
 watch(firstSelectValue, (newValue) => {
   if (newValue && currentStep.value === 1) {
     loadAssignments(newValue as string)
   }
-  // Reset second and third select when first select changes
+
   secondSelectValue.value = null
   thirdSelectValue.value = null
 
-  // In step 2, firstSelectValue is the assignment, so load rubrics when it changes
+
   if (newValue && currentStep.value === 2) {
-    // Get the discipline ID from the completed step 1
+
     const disciplineId = completedSteps.value.find(step => step.step === 1)?.firstSelect.value as string
     if (disciplineId) {
       loadRubrics(disciplineId, newValue as string)
@@ -212,10 +212,9 @@ watch(firstSelectValue, (newValue) => {
   }
 })
 
-// Watch for assignment selection to load rubrics
+
 watch(secondSelectValue, (newValue) => {
-  // This watcher is no longer needed for loading rubrics since it's handled in firstSelectValue watcher
-  // Reset third select when second select changes
+
   thirdSelectValue.value = null
 })
 
@@ -361,7 +360,7 @@ const handleNext = async () => {
 }
 
 const getOptionLabel = (options: SelectOption[], value: string | number): string => {
-  const option = options.find(opt => opt.value == value) // Use == instead of === to handle type coercion
+  const option = options.find(opt => opt.value == value)
   return option ? option.label : String(value)
 }
 
@@ -548,22 +547,17 @@ const cancelStream = () => {
 }
 
 const makeCompletionAPICall = async () => {
-  // Cancel any existing stream
   cancelStream()
 
   isLoadingAI.value = true
   isStreamingAI.value = false
   showAIResponse.value = true
-  aiResponse.value = '' // Clear previous response
+  aiResponse.value = ''
 
-  // Create abort controller for this stream
   streamAbortController.value = new AbortController()
-
-  // Immediately scroll to show the AI response card
   await scrollToAIResponse()
 
   try {
-    // Extract courseId from step 1 (discipline) and assignmentId from step 2 (assignment)
     const courseId = completedSteps.value.find(step => step.step === 1)?.firstSelect.value as string
     const assignmentId = completedSteps.value.find(step => step.step === 2)?.firstSelect.value as string
     
@@ -571,12 +565,10 @@ const makeCompletionAPICall = async () => {
       throw new Error('Missing courseId or assignmentId from completed steps')
     }
 
-    // Prepare the body with the selected values
     const body = {
       subject: completedSteps.value.find(step => step.step === 1)?.firstSelect.label || '',
       professor: completedSteps.value.find(step => step.step === 1)?.secondSelect.label || '',
       content: completedSteps.value.find(step => step.step === 2)?.firstSelect.label || '',
-      // Add any file content if available
       files: completedSteps.value.find(step => step.step === 3)?.files?.map(file => ({
         name: file.name,
         content: file.extractedText || ''
@@ -592,11 +584,8 @@ const makeCompletionAPICall = async () => {
 
     const response = await CanvasRequest.chatWithAI(courseId, assignmentId, body, accessToken, streamAbortController.value)
     
-    // Start streaming
     isLoadingAI.value = false
     isStreamingAI.value = true
-    
-    // Handle streaming response with fetch
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let partialResponse = ""
@@ -627,7 +616,6 @@ const makeCompletionAPICall = async () => {
               if (parsedResponse.content) {
                 aiResponse.value += parsedResponse.content
                 
-                // Auto-scroll to show new content as it streams
                 await nextTick()
                 await scrollToAIResponse()
               }
@@ -661,19 +649,16 @@ const scrollToAIResponse = async () => {
 
   const aiResponseElement = document.querySelector('.ai-response-area')
   if (aiResponseElement) {
-    // If streaming, scroll to show the bottom of the response area
     if (isStreamingAI.value) {
       const responseTextElement = aiResponseElement.querySelector('.ai-response-text')
       if (responseTextElement) {
         responseTextElement.scrollTop = responseTextElement.scrollHeight
       }
-      // Also ensure the whole response area is visible
       aiResponseElement.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest'
       })
     } else {
-      // Normal scroll to view the response area
       aiResponseElement.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
