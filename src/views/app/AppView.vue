@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, computed, watch, onMounted} from 'vue'
+import {ref, computed, watch, onMounted, nextTick} from 'vue'
 import {
   BookOpen,
   GraduationCap,
@@ -226,6 +226,8 @@ const fileUploads = ref<FileUpload[]>([
 const showAIResponse = ref<boolean>(false)
 const aiResponse = ref<string>('')
 const isLoadingAI = ref<boolean>(false)
+const isStreamingAI = ref<boolean>(false)
+const streamAbortController = ref<AbortController | null>(null)
 const currentStepConfig = computed(() => {
   switch (currentStep.value) {
     case 1:
@@ -471,7 +473,7 @@ const cancelExtraction = (uploadId: string) => {
 
 const toggleAIResponse = async () => {
   console.log('form', getCurrentFormData())
-  if (!isCompleted.value) return
+  if (currentStep.value <= 3) return
 
   showAIResponse.value = !showAIResponse.value
   if (showAIResponse.value) {
@@ -535,10 +537,30 @@ Next steps:
   return responses[Math.floor(Math.random() * responses.length)]
 }
 
+const cancelStream = () => {
+  if (streamAbortController.value) {
+    streamAbortController.value.abort()
+    streamAbortController.value = null
+    isStreamingAI.value = false
+    isLoadingAI.value = false
+    console.log('Stream cancelled by user')
+  }
+}
+
 const makeCompletionAPICall = async () => {
+  // Cancel any existing stream
+  cancelStream()
+
   isLoadingAI.value = true
+  isStreamingAI.value = false
   showAIResponse.value = true
   aiResponse.value = '' // Clear previous response
+
+  // Create abort controller for this stream
+  streamAbortController.value = new AbortController()
+
+  // Immediately scroll to show the AI response card
+  await scrollToAIResponse()
 
   try {
     // Extract courseId from step 1 (discipline) and assignmentId from step 2 (assignment)
@@ -568,42 +590,60 @@ const makeCompletionAPICall = async () => {
       throw new Error('No access token found')
     }
 
-    const response = await CanvasRequest.chatWithAI(courseId, assignmentId, body, accessToken)
+    const response = await CanvasRequest.chatWithAI(courseId, assignmentId, body, accessToken, streamAbortController.value)
+    
+    // Start streaming
+    isLoadingAI.value = false
+    isStreamingAI.value = true
     
     // Handle streaming response with fetch
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let partialResponse = ""
 
-    while (true) {
-      const { done, value } = await reader.read()
-      
-      if (done) {
-        console.log('Stream finished')
-        break
-      }
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        
+        if (done) {
+          console.log('Stream finished')
+          break
+        }
 
-      const chunk = decoder.decode(value)
-      partialResponse += chunk
-      const lines = partialResponse.split("\n")
-      
-      for (let i = 0; i < lines.length - 1; i++) {
-        const line = lines[i].trim()
-        if (line.startsWith("data:")) {
-          try {
-            const jsonText = line.replace(/^data:/, '').trim()
-            const parsedResponse = JSON.parse(jsonText)
-            aiResponse.value += parsedResponse.content
-            
-            // Auto-scroll to show new content as it streams
-            await scrollToAIResponse()
-          } catch (error) {
-            console.error("Error processing JSON:", error)
+        const chunk = decoder.decode(value, { stream: true })
+        partialResponse += chunk
+        const lines = partialResponse.split("\n")
+        
+        for (let i = 0; i < lines.length - 1; i++) {
+          const line = lines[i].trim()
+          if (line.startsWith("data:")) {
+            try {
+              const jsonText = line.replace(/^data:/, '').trim()
+              if (jsonText === '[DONE]') {
+                console.log('Stream completed with [DONE] marker')
+                break
+              }
+              const parsedResponse = JSON.parse(jsonText)
+              if (parsedResponse.content) {
+                aiResponse.value += parsedResponse.content
+                
+                // Auto-scroll to show new content as it streams
+                await nextTick()
+                await scrollToAIResponse()
+              }
+            } catch (error) {
+              console.error("Error processing JSON:", error, "Line:", line)
+            }
           }
         }
+        
+        partialResponse = lines[lines.length - 1]
       }
-      
-      partialResponse = lines[lines.length - 1]
+    } catch (streamError) {
+      console.error('Stream reading error:', streamError)
+      throw streamError
+    } finally {
+      reader.releaseLock()
     }
 
   } catch (error) {
@@ -611,19 +651,34 @@ const makeCompletionAPICall = async () => {
     aiResponse.value = `Error: ${error.message}`
   } finally {
     isLoadingAI.value = false
+    isStreamingAI.value = false
     await scrollToAIResponse()
   }
 }
 
 const scrollToAIResponse = async () => {
-  await new Promise(resolve => setTimeout(resolve, 100))
+  await new Promise(resolve => setTimeout(resolve, 50))
 
   const aiResponseElement = document.querySelector('.ai-response-area')
   if (aiResponseElement) {
-    aiResponseElement.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    })
+    // If streaming, scroll to show the bottom of the response area
+    if (isStreamingAI.value) {
+      const responseTextElement = aiResponseElement.querySelector('.ai-response-text')
+      if (responseTextElement) {
+        responseTextElement.scrollTop = responseTextElement.scrollHeight
+      }
+      // Also ensure the whole response area is visible
+      aiResponseElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      })
+    } else {
+      // Normal scroll to view the response area
+      aiResponseElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      })
+    }
   }
 }
 
@@ -643,7 +698,7 @@ const goToHome = () => {
         <button class="sidebar-btn" :class="{ active: currentStep === 1 }">
           <Settings class="icon"/>
         </button>
-        <button class="sidebar-btn" :class="{ active: showAIResponse, disabled: !isCompleted }"
+        <button class="sidebar-btn" :class="{ active: showAIResponse, disabled: currentStep <= 3 }"
                 @click="toggleAIResponse">
           <Menu class="icon"/>
         </button>
@@ -869,7 +924,7 @@ const goToHome = () => {
           </div>
         </div>
 
-        <div v-if="showAIResponse && isCompleted" class="ai-response-area">
+        <div v-if="showAIResponse" class="ai-response-area">
           <div class="ai-response-header">
             <div class="ai-avatar">
               <img src="../../assets/img/guma.svg" alt="Guma AI" class="ai-avatar-image"/>
@@ -883,8 +938,17 @@ const goToHome = () => {
               <p>Guma is analyzing your data and generating response...</p>
             </div>
 
+            <div v-else-if="aiResponse || isStreamingAI" class="ai-text-area">
+              <div class="ai-response-text">{{ aiResponse }}</div>
+              <div v-if="isStreamingAI" class="typing-indicator">
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+                <span class="typing-dot"></span>
+              </div>
+            </div>
+
             <div v-else class="ai-text-area">
-              <pre>{{ aiResponse || 'Click the menu button to get AI insights about your current setup!' }}</pre>
+              <pre>Click the menu button to get AI insights about your current setup!</pre>
             </div>
           </div>
         </div>

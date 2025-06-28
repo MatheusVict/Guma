@@ -38,7 +38,7 @@ export class CanvasRequest {
     return response.data;
   }
 
-  static async chatWithAI(courseId, assignmentId, body, accessToken) {
+  static async chatWithAI(courseId, assignmentId, body, accessToken, abortController = null) {
     // Use fetch for streaming since axios doesn't handle SSE well in browsers
     const response = await fetch(`${api.defaults.baseURL}/chat?courseId=${courseId}&assignmentId=${assignmentId}`, {
       method: 'POST',
@@ -47,7 +47,8 @@ export class CanvasRequest {
         'Accept': 'text/event-stream',
         'access_token': accessToken
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: abortController?.signal
     });
 
     if (!response.ok) {

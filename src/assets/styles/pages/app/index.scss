@@ -773,6 +773,45 @@
         margin: 0;
         padding: 0;
       }
+
+      .ai-response-text {
+        background: transparent;
+        border: none;
+        color: colors.color("neutral", "white-off");
+        font-family: typography.$font-primary;
+        font-size: map-get(typography.$font-sizes, 'base');
+        line-height: map-get(typography.$line-heights, 'relaxed');
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        margin: 0;
+        padding: 0;
+      }
+
+      .typing-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-left: 8px;
+        padding: 4px 8px;
+        background: rgba(colors.color("orange", "primary"), 0.1);
+        border-radius: base.$border-radius-sm;
+
+        .typing-dot {
+          width: 6px;
+          height: 6px;
+          background: colors.color("orange", "primary");
+          border-radius: 50%;
+          animation: typing-pulse 1.4s infinite ease-in-out;
+
+          &:nth-child(2) {
+            animation-delay: 0.2s;
+          }
+
+          &:nth-child(3) {
+            animation-delay: 0.4s;
+          }
+        }
+      }
     }
   }
 }
@@ -780,6 +819,17 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+@keyframes typing-pulse {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 // PDF Extraction Status Styles
